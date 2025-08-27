@@ -1,0 +1,124 @@
+/* ClientDashboard styles - based on AdminDashboard for consistency */
+@import './AdminDashboard.css';
+
+/* Navigation Badge for Notifications */
+.nav-badge {
+  background: #ef4444;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.125rem 0.375rem;
+  border-radius: 10px;
+  margin-left: 0.5rem;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.sidebar.collapsed .nav-badge {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  margin-left: 0;
+}
+
+/* Client-specific responsive adjustments */
+@media (max-width: 768px) {
+  .modern-welcome-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .modern-btn-primary,
+  .modern-btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .modern-charts-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .modern-chart-card {
+    padding: 1rem;
+  }
+  
+  .modern-chart-container {
+    height: 200px;
+  }
+}
+
+/* Client-specific customizations can be added below if needed */
+
+/* Enhanced stat card interactions */
+.modern-stat-card {
+  cursor: pointer;
+  user-select: none;
+}
+
+.modern-stat-card:active {
+  transform: translateY(-2px);
+  transition: transform 0.1s ease;
+}
+
+/* Add a subtle indicator that cards are clickable */
+.modern-stat-card::after {
+  content: '→';
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-size: 14px;
+  color: #6b7280;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: translateX(-4px);
+}
+
+.modern-stat-card:hover::after {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Enhanced notification dropdown styles */
+.dropdown-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.view-all-notifications {
+  background: transparent;
+  border: 1px solid #d1d5db;
+  color: #374151;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-all-notifications:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.notification-item {
+  transition: background-color 0.2s ease;
+}
+
+.notification-item:hover {
+  background-color: #f9fafb;
+}
+
+.unread-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: #3b82f6;
+  border-radius: 50%;
+  margin-left: 8px;
+}
