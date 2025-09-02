@@ -79,6 +79,15 @@ async sendPasswordReset(email) {
         }
     }
 
+    // Helper method to ensure user is authenticated
+    async ensureAuthenticated() {
+        const user = await this.getCurrentUser();
+        if (!user) {
+            throw new Error('Authentication required. Please log in to continue.');
+        }
+        return user;
+    }
+
     // User Management
     async getCurrentUser() {
         return new Promise((resolve) => {
@@ -179,6 +188,14 @@ async sendPasswordReset(email) {
             console.log('=== UPDATE VISIT REQUEST DEBUG ===');
             console.log('Updating request ID:', requestId);
             console.log('Update data (incoming):', data);
+            
+            // Check authentication first
+            const currentUser = this.auth.currentUser;
+            console.log('Current authenticated user:', currentUser ? currentUser.uid : 'No user');
+            
+            if (!currentUser) {
+                throw new Error('User must be authenticated to update visit requests');
+            }
             
             // Validate request ID
             if (!requestId) {

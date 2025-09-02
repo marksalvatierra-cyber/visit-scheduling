@@ -61,6 +61,47 @@ const VisitRequests = () => {
     const loadVisitRequests = async () => {
       try {
         setLoading(true);
+        
+        // Check authentication before loading data
+        const currentUser = await firebaseService.getCurrentUser();
+        console.log('Current user authentication status:', currentUser ? 'Authenticated' : 'Not authenticated');
+        
+        if (!currentUser) {
+          console.warn('User not authenticated, using fallback data');
+          // Fallback to mock data if not authenticated
+          setVisitRequests([
+            {
+              id: 1,
+              clientName: 'Maria Santos',
+              clientEmail: 'maria.santos@email.com',
+              inmateName: 'Juan Santos',
+              visitDate: '2024-01-15',
+              visitTime: '14:00',
+              status: 'pending',
+              requestDate: '2024-01-10',
+              submittedAt: '2024-01-10',
+              relationship: 'Wife',
+              purpose: 'Family Visit',
+              reason: 'Family Visit'
+            },
+            {
+              id: 2,
+              clientName: 'Robert Johnson',
+              clientEmail: 'robert.johnson@email.com',
+              inmateName: 'Michael Johnson',
+              visitDate: '2024-01-16',
+              visitTime: '10:30',
+              status: 'approved',
+              requestDate: '2024-01-11',
+              submittedAt: '2024-01-11',
+              relationship: 'Father',
+              purpose: 'Legal Consultation',
+              reason: 'Legal Consultation'
+            }
+          ]);
+          return;
+        }
+        
         const requests = await firebaseService.getVisitRequests();
         setVisitRequests(requests);
       } catch (error) {
@@ -194,6 +235,15 @@ const VisitRequests = () => {
 
     try {
       console.log('=== CONFIRM OFFICER ACTION START ===');
+      
+      // Check authentication status first
+      const currentUser = await firebaseService.getCurrentUser();
+      console.log('Current user authentication:', currentUser);
+      
+      if (!currentUser) {
+        throw new Error('User not authenticated. Please log in again.');
+      }
+      
       console.log('Current action:', currentAction);
       console.log('Selected request:', selectedRequest);
       console.log('Selected officer:', selectedOfficer);

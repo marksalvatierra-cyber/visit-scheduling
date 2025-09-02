@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow authenticated users to read and write their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow authenticated users to read and write visit requests
+    match /visitRequests/{requestId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to read and write notifications
+    match /notifications/{notificationId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to read and write logs
+    match /logs/{logId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to read and write inmates data
+    match /inmates/{inmateId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to read and write visit QR codes
+    match /visitQRCodes/{qrCodeId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow all authenticated users to read and write all documents
+    // For development - consider making more restrictive in production
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
