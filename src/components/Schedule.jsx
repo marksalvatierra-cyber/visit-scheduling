@@ -79,7 +79,7 @@ const Toast = ({ message, type, isVisible, onClose }) => {
 const initialForm = {
   visitDate: '',
   visitorName: '',
-  inmateName: '',
+  inmateNumber: '',
   relationship: '',
   visitReason: '',
   visitTime: '',
@@ -93,11 +93,20 @@ const Schedule = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState({ message: '', type: '', isVisible: false });
+  const [validatingInmate, setValidatingInmate] = useState(false);
+  const [inmateValidation, setInmateValidation] = useState({ isValid: null, inmateName: '', status: '' });
 
   // Load inmates on component mount
   useEffect(() => {
     loadInmates();
   }, []);
+
+  // Validate inmate number when inmates are loaded and there's an input
+  useEffect(() => {
+    if (inmates.length > 0 && form.inmateNumber.trim()) {
+      validateInmateNumber(form.inmateNumber);
+    }
+  }, [inmates]);
 
   // Show toast notification
   const showToast = (message, type = 'success') => {
@@ -107,15 +116,14 @@ const Schedule = () => {
   const loadInmates = async () => {
     setLoading(true);
     try {
-      const inmateList = await firebaseService.getInmates('active');
-      setInmates([
-        { id: '', name: 'Select an inmate...', disabled: true },
-        ...inmateList.map(inmate => ({
-          id: inmate.id,
-          name: `${inmate.firstName} ${inmate.lastName}`,
-          inmateId: inmate.inmateId
-        }))
-      ]);
+      // Load all inmates (not just active) to validate against all existing inmate numbers
+      const inmateList = await firebaseService.getInmates(); // Remove 'active' filter
+      setInmates(inmateList.map(inmate => ({
+        id: inmate.id,
+        name: `${inmate.firstName} ${inmate.middleName ? inmate.middleName + ' ' : ''}${inmate.lastName}`,
+        inmateNumber: inmate.inmateNumber, // Use inmateNumber field from Records
+        status: inmate.status
+      })));
     } catch (error) {
       console.error('Error loading inmates:', error);
       setError('Failed to load inmates. Please try again.');
@@ -124,19 +132,60 @@ const Schedule = () => {
     }
   };
 
+  // Validate inmate number function
+  const validateInmateNumber = async (inmateNumber) => {
+    if (!inmateNumber.trim()) {
+      setInmateValidation({ isValid: null, inmateName: '', status: '' });
+      return;
+    }
+
+    setValidatingInmate(true);
+    try {
+      const foundInmate = inmates.find(inmate => 
+        inmate.inmateNumber && inmate.inmateNumber.toLowerCase() === inmateNumber.toLowerCase()
+      );
+      
+      if (foundInmate) {
+        if (foundInmate.status === 'active') {
+          setInmateValidation({ isValid: true, inmateName: foundInmate.name, status: 'active' });
+        } else {
+          setInmateValidation({ isValid: false, inmateName: foundInmate.name, status: 'inactive' });
+        }
+      } else {
+        setInmateValidation({ isValid: false, inmateName: '', status: '' });
+      }
+    } catch (error) {
+      console.error('Error validating inmate number:', error);
+      setInmateValidation({ isValid: false, inmateName: '', status: '' });
+    } finally {
+      setValidatingInmate(false);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
     if (error) setError('');
+    
+    // Validate inmate number when it changes
+    if (name === 'inmateNumber' && inmates.length > 0) {
+      validateInmateNumber(value);
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
     // Validate form
-    if (!form.visitDate || !form.visitorName || !form.inmateName ||
+    if (!form.visitDate || !form.visitorName || !form.inmateNumber ||
         !form.relationship || !form.visitReason || !form.visitTime) {
       setError('Please fill in all required fields.');
+      return;
+    }
+
+    // Validate inmate number
+    if (!inmateValidation.isValid) {
+      setError('Please enter a valid inmate number.');
       return;
     }
 
@@ -162,13 +211,16 @@ const Schedule = () => {
         return;
       }
 
-      const selectedInmate = inmates.find(inmate => inmate.id === form.inmateName);
+      const selectedInmate = inmates.find(inmate => 
+        inmate.inmateNumber && inmate.inmateNumber.toLowerCase() === form.inmateNumber.toLowerCase()
+      );
       
       const visitRequestData = {
         clientId: currentUser.uid,
         clientName: form.visitorName,
         clientEmail: currentUser.email,
-        inmateId: form.inmateName,
+        inmateId: selectedInmate?.id || '',
+        inmateNumber: form.inmateNumber,
         inmateName: selectedInmate?.name || '',
         visitDate: form.visitDate,
         visitTime: form.visitTime,
@@ -322,37 +374,116 @@ const Schedule = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="inmateName" className="form-label">
+                <label htmlFor="inmateNumber" className="form-label">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                     <circle cx="8.5" cy="7" r="4"></circle>
                     <path d="M20 8v6M23 11h-6"></path>
                   </svg>
-                  Inmate Name *
+                  Inmate Number *
                 </label>
-                <select
-                  className="form-select"
-                  id="inmateName"
-                  name="inmateName"
-                  value={form.inmateName}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <option value="">Loading inmates...</option>
-                  ) : (
-                    inmates.map((inmate) => (
-                      <option
-                        key={inmate.id}
-                        value={inmate.id}
-                        disabled={inmate.disabled}
-                      >
-                        {inmate.name}
-                      </option>
-                    ))
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    className={`form-input ${
+                      inmateValidation.isValid === true ? 'valid' : 
+                      inmateValidation.isValid === false ? 'invalid' : ''
+                    }`}
+                    id="inmateNumber"
+                    name="inmateNumber"
+                    value={form.inmateNumber}
+                    onChange={handleChange}
+                    placeholder="Enter inmate number (e.g., INM-2024-001)"
+                    required
+                    style={{
+                      paddingRight: validatingInmate || inmateValidation.isValid !== null ? '40px' : '12px'
+                    }}
+                  />
+                  {validatingInmate && (
+                    <div style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#6b7280'
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                        <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                      </svg>
+                    </div>
                   )}
-                </select>
+                  {!validatingInmate && inmateValidation.isValid === true && (
+                    <div style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#10b981'
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="20,6 9,17 4,12"></polyline>
+                      </svg>
+                    </div>
+                  )}
+                  {!validatingInmate && inmateValidation.isValid === false && (
+                    <div style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#ef4444'
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                {inmateValidation.isValid === true && inmateValidation.inmateName && (
+                  <div style={{
+                    marginTop: '8px',
+                    padding: '8px 12px',
+                    backgroundColor: '#f0f9ff',
+                    border: '1px solid #0ea5e9',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    color: '#0369a1',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22,4 12,14.01 9,11.01"></polyline>
+                    </svg>
+                    Inmate found: {inmateValidation.inmateName} (Active)
+                  </div>
+                )}
+                {inmateValidation.isValid === false && form.inmateNumber.trim() && (
+                  <div style={{
+                    marginTop: '8px',
+                    padding: '8px 12px',
+                    backgroundColor: '#fef2f2',
+                    border: '1px solid #fecaca',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    color: '#dc2626',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="15" y1="9" x2="9" y2="15"></line>
+                      <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                    {inmateValidation.status === 'inactive' && inmateValidation.inmateName ? 
+                      `Inmate ${inmateValidation.inmateName} is inactive and cannot receive visits.` :
+                      'Invalid inmate number. Please check and try again.'}
+                  </div>
+                )}
               </div>
 
               <div className="form-group">
@@ -593,15 +724,24 @@ const Schedule = () => {
                   color: '#6b7280',
                   marginBottom: '4px'
                 }}>
-                  Inmate Name
+                  Inmate Number
                 </div>
                 <div style={{
                   fontSize: '14px',
                   fontWeight: '600',
                   color: '#1f2937'
                 }}>
-                  {inmates.find(inmate => inmate.id === form.inmateName)?.name}
+                  {form.inmateNumber}
                 </div>
+                {inmateValidation.inmateName && (
+                  <div style={{
+                    fontSize: '12px',
+                    color: '#6b7280',
+                    marginTop: '4px'
+                  }}>
+                    ({inmateValidation.inmateName})
+                  </div>
+                )}
               </div>
               
               <div style={{

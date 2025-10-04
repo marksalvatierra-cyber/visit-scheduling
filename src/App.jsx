@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import './App.css'
 import LoginModal from './LoginModal'
 import AdminDashboard from './components/AdminDashboard'
+import OfficerDashboard from './components/OfficerDashboard'
 import ClientDashboard from './components/ClientDashboard'
 
 function App() {
@@ -156,6 +157,8 @@ function App() {
         
         {/* Admin Routes */}
         <Route path="/admin/*" element={<AdminDashboard />} />
+        {/* Officer Routes */}
+        <Route path="/officer/*" element={<OfficerDashboard />} />
         {/* Client Routes */}
         <Route path="/client/*" element={<ClientDashboard />} />
         

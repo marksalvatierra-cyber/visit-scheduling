@@ -11,6 +11,7 @@ import Records from './Records';
 import LogTrails from './LogTrails';
 import Settings from './AdminSettings';
 import Profile from './AdminProfile.jsx';
+import AddAdmin from './AddAdmin.jsx';
 import './AdminDashboard.css';
 
 
@@ -35,7 +36,7 @@ const AdminDashboard = () => {
   const [unsubscribeNotifications, setUnsubscribeNotifications] = useState(null);
   const [showAvatarDropdown, setShowAvatarDropdown] = useState(false);
   const [showBellDropdown, setShowBellDropdown] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [activeTooltip, setActiveTooltip] = useState(null);
   const [tooltipTimeout, setTooltipTimeout] = useState(null);
   const [dashboardStats, setDashboardStats] = useState({
@@ -707,6 +708,7 @@ console.log('📊 Current chart data being rendered:', {
       'dashboard': 'Dashboard',
       'visit': 'Visit Requests',
       'scan': 'Scan',
+      'addadmin': 'Manage Officers',
       'inmate': 'Add Inmate',
       'records': 'Records',
       'log': 'Log Trails',
@@ -720,10 +722,11 @@ console.log('📊 Current chart data being rendered:', {
       'dashboard': '120px',
       'visit': '180px',
       'scan': '240px',
-      'inmate': '320px',
-      'records': '380px',
-      'log': '440px',
-      'settings': '500px'
+      'addadmin': '300px',
+      'inmate': '380px',
+      'records': '440px',
+      'log': '500px',
+      'settings': '560px'
     };
     return positionMap[tooltipId] || '0px';
   };
@@ -732,6 +735,7 @@ console.log('📊 Current chart data being rendered:', {
     const path = location.pathname;
     if (path.includes('/visit')) return 'visit';
     if (path.includes('/scan')) return 'scan';
+    if (path.includes('/addadmin')) return 'addadmin';
     if (path.includes('/inmate')) return 'inmate';
     if (path.includes('/records')) return 'records';
     if (path.includes('/log')) return 'log';
@@ -1008,6 +1012,26 @@ const markAllNotificationsRead = async () => {
                       <path d="M17 17h6v6h-6z"></path>
                     </svg>
                     <span className="nav-text">Scan</span>
+                  </button>
+                </li>
+                <li className={`nav-item ${getCurrentPage() === 'addadmin' ? 'active' : ''}`}>
+                  <button 
+                    className="nav-link"
+                    onClick={() => handleNavigation('addadmin')}
+                    title="Manage Officers"
+                    data-tooltip="Manage Officers"
+                    onMouseEnter={() => handleTooltipShow('addadmin')}
+                    onMouseLeave={handleTooltipHide}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                      <line x1="20" y1="8" x2="24" y2="8"></line>
+                      <line x1="22" y1="6" x2="22" y2="10"></line>
+                    </svg>
+                    <span className="nav-text">Manage Officers</span>
                   </button>
                 </li>
               </ul>
@@ -1523,6 +1547,8 @@ const markAllNotificationsRead = async () => {
           <Route path="/settings" element={<Settings />} />
           
           <Route path="/profile" element={<Profile onProfilePictureUpdate={updateProfilePicture} />} />
+          
+          <Route path="/addadmin" element={<AddAdmin />} />
           
           <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
         </Routes>

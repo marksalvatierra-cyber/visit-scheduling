@@ -3,7 +3,7 @@ import './LogTrails.css';
 import './shared.css';
 import firebaseService from '../firebase-services.js';
 
-const LogTrails = () => {
+const LogTrails = ({ officerFilter = null }) => {
   const [logs, setLogs] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLog, setSelectedLog] = useState(null);
@@ -12,29 +12,79 @@ const LogTrails = () => {
 
   useEffect(() => {
     setLoading(true);
-    const unsubscribe = firebaseService.db.collection('logs')
-      .orderBy('timestamp', 'desc')
-      .limit(50)
-      .onSnapshot(snapshot => {
-        const logsArr = [];
-        snapshot.forEach(doc => {
-          logsArr.push({
-            id: doc.id,
-            ...doc.data(),
-            timestamp: doc.data().timestamp?.toDate
-              ? doc.data().timestamp.toDate()
-              : doc.data().timestamp
+    
+    if (officerFilter) {
+      // For officers, fetch only their own logs
+      const fetchOfficerLogs = async () => {
+        try {
+          console.log('🔍 DEBUG: Fetching logs for officer:', `"${officerFilter}"`);
+          console.log('🔍 DEBUG: Officer filter length:', officerFilter?.length);
+          
+          const officerLogs = await firebaseService.getLogsByOfficer(officerFilter);
+          console.log('📋 DEBUG: Found officer logs:', officerLogs.length, 'entries');
+          
+          // Also fetch all logs to compare
+          const allLogs = await firebaseService.getLogs(50);
+          console.log('📊 DEBUG: All logs in system:', allLogs.length, 'entries');
+          
+          const officerNamesInLogs = [...new Set(allLogs.map(log => log.officerName))];
+          console.log('🔍 DEBUG: Officer names in all logs:', officerNamesInLogs);
+          
+          // Check for exact matches and case-insensitive matches
+          const exactMatch = officerNamesInLogs.find(name => name === officerFilter);
+          const caseInsensitiveMatch = officerNamesInLogs.find(name => 
+            name?.toLowerCase() === officerFilter?.toLowerCase()
+          );
+          
+          console.log('🔍 DEBUG: Exact match found:', exactMatch);
+          console.log('🔍 DEBUG: Case-insensitive match found:', caseInsensitiveMatch);
+          
+          const logsArr = officerLogs.map(log => ({
+            ...log,
+            timestamp: log.timestamp?.toDate
+              ? log.timestamp.toDate()
+              : log.timestamp
+          }));
+          setLogs(logsArr);
+        } catch (error) {
+          console.error('Error fetching officer logs:', error);
+          setLogs([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      fetchOfficerLogs();
+      
+      // Set up a shorter interval to refresh officer logs
+      const interval = setInterval(fetchOfficerLogs, 30000); // Refresh every 30 seconds
+      return () => clearInterval(interval);
+    } else {
+      // For admins, show all logs with real-time updates
+      const unsubscribe = firebaseService.db.collection('logs')
+        .orderBy('timestamp', 'desc')
+        .limit(50)
+        .onSnapshot(snapshot => {
+          const logsArr = [];
+          snapshot.forEach(doc => {
+            logsArr.push({
+              id: doc.id,
+              ...doc.data(),
+              timestamp: doc.data().timestamp?.toDate
+                ? doc.data().timestamp.toDate()
+                : doc.data().timestamp
+            });
           });
+          setLogs(logsArr);
+          setLoading(false);
+        }, error => {
+          console.error('Error listening to logs:', error);
+          setLoading(false);
         });
-        setLogs(logsArr);
-        setLoading(false);
-      }, error => {
-        console.error('Error listening to logs:', error);
-        setLoading(false);
-      });
 
-    return () => unsubscribe();
-  }, []);
+      return () => unsubscribe();
+    }
+  }, [officerFilter]);
 
   const capitalize = (str) => {
     if (!str) return '';
@@ -165,7 +215,7 @@ const LogTrails = () => {
             <line x1="16" y1="17" x2="8" y2="17"></line>
             <polyline points="10,9 9,9 8,9"></polyline>
           </svg>
-          Log Trails
+          {officerFilter ? `My Activity Logs` : 'Log Trails'}
         </div>
       </div>
 
@@ -181,7 +231,7 @@ const LogTrails = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="unified-search-input"
-            placeholder="Search logs by officer, action, visitor, inmate, or purpose..."
+            placeholder={officerFilter ? "Search my logs by action, visitor, inmate, or purpose..." : "Search logs by officer, action, visitor, inmate, or purpose..."}
           />
         </div>
       </div>
@@ -227,8 +277,8 @@ const LogTrails = () => {
         ) : (
           <>
             <div className="unified-table-header">
-              <div className="unified-table-title">System Activity Logs</div>
-              <div className="unified-table-subtitle">Showing {filteredLogs.length} log entries</div>
+              <div className="unified-table-title">{officerFilter ? 'My Activity Logs' : 'System Activity Logs'}</div>
+              <div className="unified-table-subtitle">Showing {filteredLogs.length} log entries{officerFilter ? ' by ' + officerFilter : ''}</div>
             </div>
             
             <div className="unified-table-grid">

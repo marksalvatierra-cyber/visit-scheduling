@@ -125,22 +125,6 @@ const Scan = () => {
         </div>
           </div>
 
-      {/* Modern Search Section */}
-      <div className="modern-search-section">
-        <div className="unified-search-container">
-          <svg className="unified-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8"></circle>
-            <path d="M21 21l-4.35-4.35"></path>
-          </svg>
-          <input
-            type="text"
-            className="unified-search-input"
-            placeholder="Scan and verify visitor QR codes for appointments"
-            disabled
-          />
-        </div>
-      </div>
-
       {/* New Design: Split Layout */}
       <div style={{ 
         display: 'flex', 

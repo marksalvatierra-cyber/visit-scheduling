@@ -157,6 +157,27 @@
   box-shadow: 0 0 0 3px rgb(37 99 235 / 0.1);
 }
 
+/* Validation states for input */
+.form-input.valid {
+  border-color: var(--green-500);
+  box-shadow: 0 0 0 3px rgb(16 185 129 / 0.1);
+}
+
+.form-input.invalid {
+  border-color: var(--red-500);
+  box-shadow: 0 0 0 3px rgb(239 68 68 / 0.1);
+}
+
+.form-input.valid:focus {
+  border-color: var(--green-500);
+  box-shadow: 0 0 0 3px rgb(16 185 129 / 0.1);
+}
+
+.form-input.invalid:focus {
+  border-color: var(--red-500);
+  box-shadow: 0 0 0 3px rgb(239 68 68 / 0.1);
+}
+
 .form-textarea {
   min-height: 100px;
   resize: vertical;

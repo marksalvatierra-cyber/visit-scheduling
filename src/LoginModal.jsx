@@ -59,10 +59,16 @@ const LoginModal = ({ isOpen, onClose }) => {
         setSuccess('Login successful! Redirecting...');
         const userData = await firebaseService.getUserData(result.user.uid);
         setTimeout(() => {
-          if (userData && userData.userType === 'admin') {
+          // Check both 'role' and 'userType' fields for compatibility
+          const userRole = userData?.role || userData?.userType;
+          
+          if (userData && userRole === 'admin') {
             onClose();
             navigate('/admin/dashboard');
-          } else if (userData && userData.userType === 'client') {
+          } else if (userData && userRole === 'officer') {
+            onClose();
+            navigate('/officer/dashboard');
+          } else if (userData && userRole === 'client') {
             onClose();
             navigate('/client/dashboard');
           } else {
@@ -85,7 +91,7 @@ const LoginModal = ({ isOpen, onClose }) => {
         const userData = {
           name: formData.register.name,
           phone: formData.register.phone,
-          userType: 'client', // Default to client
+          role: 'client', // Default to client
           uid: null // Will be set by Firebase Auth
         };
         

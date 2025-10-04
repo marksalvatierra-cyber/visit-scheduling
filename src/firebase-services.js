@@ -109,6 +109,23 @@ async sendPasswordReset(email) {
         }
     }
 
+    async getAllUsers() {
+        try {
+            const querySnapshot = await this.db.collection('users').get();
+            const users = [];
+            querySnapshot.forEach((doc) => {
+                users.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            return users;
+        } catch (error) {
+            console.error('Error getting all users:', error);
+            throw error;
+        }
+    }
+
     async updateUserProfile(userId, data) {
         try {
             await this.db.collection('users').doc(userId).update({

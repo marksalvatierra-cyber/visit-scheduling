@@ -5,7 +5,7 @@ import './VisitRequests.css';
 import './shared.css';
 import { useSearchParams } from 'react-router-dom';
 
-const VisitRequests = () => {
+const VisitRequests = ({ currentOfficer = null }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [visitRequests, setVisitRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -212,6 +212,11 @@ const VisitRequests = () => {
     setCurrentAction(action);
     setSelectedRequest(request);
     
+    // If currentOfficer is provided (officer dashboard), auto-select officer
+    if (currentOfficer) {
+      setSelectedOfficer(currentOfficer);
+    }
+    
     if (action === 'reject' || action === 'reschedule') {
       setShowOfficerModal(true);
     } else if (action === 'approve') {
@@ -221,7 +226,10 @@ const VisitRequests = () => {
 
   // FIXED confirmOfficerAction function
   const confirmOfficerAction = async () => {
-    if (!selectedOfficer) {
+    // For officer dashboard, use currentOfficer; for admin dashboard, require selection
+    const officerName = currentOfficer || selectedOfficer;
+    
+    if (!officerName) {
       alert('Please select an officer');
       return;
     }
@@ -270,9 +278,13 @@ const VisitRequests = () => {
       // Prepare update data
       const updateData = {
         status: newStatus,
-        reviewedBy: selectedOfficer,
+        reviewedBy: officerName,
         reviewedAt: new Date().toISOString()
       };
+
+      console.log('🔍 DEBUG: Officer name being sent to Firebase:', officerName);
+      console.log('🔍 DEBUG: Current officer prop:', currentOfficer);
+      console.log('🔍 DEBUG: Selected officer:', selectedOfficer);
 
       // Add reason if provided
       if (actionReason.trim()) {
@@ -308,7 +320,9 @@ const VisitRequests = () => {
         
         // Reset modal state
         setShowOfficerModal(false);
-        setSelectedOfficer('');
+        if (!currentOfficer) {
+          setSelectedOfficer('');
+        }
         setActionReason('');
         setCurrentAction('');
         setSelectedRequest(null);
@@ -457,7 +471,9 @@ const VisitRequests = () => {
   const closeOfficerModal = () => {
     if (confirmLoading) return;
     setShowOfficerModal(false);
-    setSelectedOfficer('');
+    if (!currentOfficer) {
+      setSelectedOfficer('');
+    }
     setActionReason('');
     setCurrentAction('');
     setSelectedRequest(null);
@@ -824,7 +840,8 @@ const VisitRequests = () => {
               flexGrow: 1,
               minHeight: 0
             }}>
-              {/* Officer Selection Section */}
+              {/* Officer Selection Section - Only show if no currentOfficer provided */}
+              {!currentOfficer && (
               <div style={{
                 marginBottom: '24px',
                 paddingTop: '16px'
@@ -910,6 +927,95 @@ const VisitRequests = () => {
                   </select>
                 </div>
               </div>
+              )}
+              
+              {/* Officer Info Display for Officer Dashboard */}
+              {currentOfficer && (
+                <div style={{
+                  marginBottom: '24px',
+                  paddingTop: '16px'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    marginBottom: '12px'
+                  }}>
+                    <div style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '6px',
+                      background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white'
+                    }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 style={{
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        color: '#111827',
+                        margin: '0 0 1px 0'
+                      }}>
+                        Processing Officer
+                      </h4>
+                      <p style={{
+                        fontSize: '12px',
+                        color: '#6b7280',
+                        margin: '0'
+                      }}>
+                        This action will be recorded under your name
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div style={{
+                    background: '#f8fafc',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '10px',
+                    padding: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px'
+                  }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontSize: '14px',
+                      fontWeight: '600'
+                    }}>
+                      {currentOfficer?.charAt(0) || 'O'}
+                    </div>
+                    <div>
+                      <div style={{
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        color: '#111827'
+                      }}>
+                        {currentOfficer}
+                      </div>
+                      <div style={{
+                        fontSize: '13px',
+                        color: '#6b7280'
+                      }}>
+                        Bureau of Corrections Officer
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               {/* Reason Section (for reject/reschedule) */}
               {(currentAction === 'reject' || currentAction === 'reschedule') && (

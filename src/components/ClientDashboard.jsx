@@ -28,7 +28,7 @@ ChartJS.register(
 
 const ClientDashboard = () => {
   const navigate = useNavigate();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [showBellDropdown, setShowBellDropdown] = useState(false);
   const [showAvatarDropdown, setShowAvatarDropdown] = useState(false);
   const [notifications, setNotifications] = useState([]);
