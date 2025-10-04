@@ -5,7 +5,7 @@ import VisitRequests from './VisitRequests';
 import Scan from './Scan';
 import Records from './Records';
 import LogTrails from './LogTrails';
-import AdminProfile from './AdminProfile.jsx';
+import OfficerProfile from './OfficerProfile.jsx';
 import './AdminDashboard.css'; // Reuse admin styles for now
 
 const OfficerDashboard = () => {
@@ -432,7 +432,7 @@ const OfficerDashboard = () => {
           <Route path="/scan" element={<Scan />} />
           <Route path="/records" element={<Records />} />
           <Route path="/log" element={<LogTrails officerFilter={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : null)} />} />
-          <Route path="/profile" element={<AdminProfile onProfilePictureUpdate={updateProfilePicture} />} />
+          <Route path="/profile" element={<OfficerProfile onProfilePictureUpdate={updateProfilePicture} />} />
           <Route path="/" element={<Navigate to="/officer/dashboard" replace />} />
         </Routes>
       </main>
