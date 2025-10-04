@@ -27,17 +27,77 @@ const OfficerDashboard = () => {
     total: 0
   });
 
+  // Load officer-specific dashboard stats
+  const loadOfficerDashboardStats = async (officerName) => {
+    try {
+      // Get all visit requests
+      const allRequests = await firebaseService.getVisitRequests();
+      
+      console.log('📊 All requests loaded:', allRequests.length);
+      console.log('👮 Filtering for officer:', officerName);
+      
+      // Filter requests processed by this officer or assigned to them
+      const officerRequests = allRequests.filter(req => {
+        const isOfficerRequest = req.reviewedBy === officerName || 
+          req.processedBy === officerName || 
+          req.handledBy === officerName ||
+          req.officerName === officerName ||
+          req.assignedOfficer === officerName;
+        
+        if (isOfficerRequest) {
+          console.log('🎯 Found officer request:', {
+            id: req.id,
+            status: req.status,
+            reviewedBy: req.reviewedBy,
+            processedBy: req.processedBy,
+            clientName: req.clientName
+          });
+        }
+        
+        return isOfficerRequest;
+      });
+      
+      console.log('📋 Officer requests found:', officerRequests.length);
+      
+      // Calculate officer-specific statistics
+      const approved = officerRequests.filter(req => req.status === 'approved').length;
+      const pending = officerRequests.filter(req => req.status === 'pending').length;
+      const rescheduled = officerRequests.filter(req => req.status === 'rescheduled' || req.status === 'reschedule').length;
+      const rejected = officerRequests.filter(req => req.status === 'rejected').length;
+      const total = officerRequests.length;
+      
+      console.log('🔍 Officer dashboard stats:', { approved, pending, rescheduled, rejected, total });
+      
+      return { approved, pending, rescheduled, rejected, total };
+    } catch (error) {
+      console.error('Error loading officer dashboard stats:', error);
+      // Return default stats on error
+      return { approved: 0, pending: 0, rescheduled: 0, rejected: 0, total: 0 };
+    }
+  };
+
+  // Function to refresh dashboard stats
+  const refreshDashboardStats = async () => {
+    if (userProfile) {
+      const constructedName = userProfile.name || 
+        (userProfile.firstName && userProfile.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : null);
+      
+      if (constructedName) {
+        console.log('🔄 Refreshing officer dashboard stats for:', constructedName);
+        const officerStats = await loadOfficerDashboardStats(constructedName);
+        setDashboardStats(officerStats);
+        console.log('✅ Dashboard stats refreshed:', officerStats);
+      }
+    }
+  };
+
   // Load user data and dashboard stats
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
         setLoading(true);
         
-        const [stats, currentUser] = await Promise.all([
-          firebaseService.getDashboardStats(),
-          firebaseService.getCurrentUser()
-        ]);
-        
+        const currentUser = await firebaseService.getCurrentUser();
         setCurrentUser(currentUser);
         
         // Load user profile data
@@ -52,14 +112,18 @@ const OfficerDashboard = () => {
               ...userData,
               profilePicture: userData.profilePicture || "/image/Logo.png"
             });
+            
+            // Load officer-specific dashboard stats
+            if (constructedName) {
+              const officerStats = await loadOfficerDashboardStats(constructedName);
+              setDashboardStats(officerStats);
+            }
           } else {
             setUserProfile({
               profilePicture: "/image/Logo.png"
             });
           }
         }
-        
-        setDashboardStats(stats);
         
       } catch (error) {
         console.error('Error loading officer dashboard data:', error);
@@ -70,6 +134,25 @@ const OfficerDashboard = () => {
 
     loadDashboardData();
   }, []);
+
+  // Auto-refresh dashboard stats every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshDashboardStats();
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [userProfile]);
+
+  // Listen for page focus to refresh stats
+  useEffect(() => {
+    const handleFocus = () => {
+      refreshDashboardStats();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [userProfile]);
 
   // Theme management
   useEffect(() => {
@@ -365,15 +448,48 @@ const OfficerDashboard = () => {
       <main className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <Routes>
           <Route path="/dashboard" element={
-            <div className="modern-records-header">
-              <div className="modern-records-title">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M1 1h6v6H1z"></path>
-                  <path d="M17 1h6v6h-6z"></path>
-                  <path d="M1 17h6v6H1z"></path>
-                  <path d="M17 17h6v6h-6z"></path>
-                </svg>
-                Welcome back, Officer! 👮‍♂️
+            <>
+              {/* Modern Welcome Section */}
+              <div className="modern-records-header">
+                <div className="modern-records-title">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M1 1h6v6H1z"></path>
+                    <path d="M17 1h6v6h-6z"></path>
+                    <path d="M1 17h6v6H1z"></path>
+                    <path d="M17 17h6v6h-6z"></path>
+                  </svg>
+                  Welcome back, Officer! 👮‍♂️
+                </div>
+                <button 
+                  onClick={refreshDashboardStats}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 16px',
+                    border: '2px solid #10b981',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    background: 'white',
+                    color: '#10b981',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.background = '#f0fdf4';
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.background = 'white';
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M23 4v6h-6"></path>
+                    <path d="M1 20v-6h6"></path>
+                    <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+                  </svg>
+                  Refresh Stats
+                </button>
               </div>
               
               {/* Officer Stats */}
@@ -386,10 +502,19 @@ const OfficerDashboard = () => {
                           <polyline points="20,6 9,17 4,12"></polyline>
                         </svg>
                       </div>
+                      <div className="modern-stat-status">
+                        <div style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: '#10b981'
+                        }}></div>
+                      </div>
                     </div>
                     <div className="modern-stat-content">
                       <div className="modern-stat-value">{dashboardStats.approved}</div>
-                      <div className="modern-stat-label">Processed</div>
+                      <div className="modern-stat-label">Approved</div>
+                      <div className="modern-stat-change positive">+12% from last month</div>
                     </div>
                   </div>
 
@@ -401,10 +526,19 @@ const OfficerDashboard = () => {
                           <polyline points="12,6 12,12 16,14"></polyline>
                         </svg>
                       </div>
+                      <div className="modern-stat-status">
+                        <div style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: '#f59e0b'
+                        }}></div>
+                      </div>
                     </div>
                     <div className="modern-stat-content">
                       <div className="modern-stat-value">{dashboardStats.pending}</div>
                       <div className="modern-stat-label">Pending Review</div>
+                      <div className="modern-stat-change neutral">Requires attention</div>
                     </div>
                   </div>
 
@@ -412,23 +546,251 @@ const OfficerDashboard = () => {
                     <div className="modern-stat-header">
                       <div className="modern-stat-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                          <polyline points="14,2 14,8 20,8"></polyline>
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                          <line x1="16" y1="2" x2="16" y2="6"></line>
+                          <line x1="8" y1="2" x2="8" y2="6"></line>
+                          <line x1="3" y1="10" x2="21" y2="10"></line>
                         </svg>
+                      </div>
+                      <div className="modern-stat-status">
+                        <div style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: '#8b5cf6'
+                        }}></div>
                       </div>
                     </div>
                     <div className="modern-stat-content">
-                      <div className="modern-stat-value">{dashboardStats.total}</div>
-                      <div className="modern-stat-label">Total Requests</div>
+                      <div className="modern-stat-value">{dashboardStats.rescheduled}</div>
+                      <div className="modern-stat-label">Rescheduled</div>
+                      <div className="modern-stat-change negative">-3% from last month</div>
+                    </div>
+                  </div>
+
+                  <div className="modern-stat-card rejected">
+                    <div className="modern-stat-header">
+                      <div className="modern-stat-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                      </div>
+                      <div className="modern-stat-status">
+                        <div style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: '#ef4444'
+                        }}></div>
+                      </div>
+                    </div>
+                    <div className="modern-stat-content">
+                      <div className="modern-stat-value">{dashboardStats.rejected}</div>
+                      <div className="modern-stat-label">Rejected</div>
+                      <div className="modern-stat-change negative">+8% from last month</div>
                     </div>
                   </div>
                 </div>
               </section>
-            </div>
+
+              {/* Officer Quick Actions Section */}
+              <section className="modern-activity-section">
+                <div className="modern-activity-header">
+                  <div className="modern-activity-title">
+                    <h2>Quick Actions</h2>
+                    <p>Frequently used officer tools and shortcuts</p>
+                  </div>
+                </div>
+                
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(4, 1fr)', 
+                  gap: '16px' 
+                }}>
+                  <div className="modern-chart-card" style={{ cursor: 'pointer' }} onClick={() => handleNavigation('visit')}>
+                    <div className="modern-chart-header">
+                      <div className="modern-chart-title">
+                        <div className="modern-chart-icon">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14,2 14,8 20,8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                          </svg>
+                        </div>
+                        <div className="modern-chart-info">
+                          <h3>Review Visit Requests</h3>
+                          <p>Process pending visit applications</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="modern-chart-container" style={{ 
+                      height: '1px'
+                    }}>
+                    </div>
+                  </div>
+
+                  <div className="modern-chart-card" style={{ cursor: 'pointer' }} onClick={() => handleNavigation('scan')}>
+                    <div className="modern-chart-header">
+                      <div className="modern-chart-title">
+                        <div className="modern-chart-icon">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M1 1h6v6H1z"></path>
+                            <path d="M17 1h6v6h-6z"></path>
+                            <path d="M1 17h6v6H1z"></path>
+                            <path d="M17 17h6v6h-6z"></path>
+                          </svg>
+                        </div>
+                        <div className="modern-chart-info">
+                          <h3>Scan Visitor ID</h3>
+                          <p>Verify visitor identification</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="modern-chart-container" style={{ 
+                      height: '1px'
+                    }}>
+                    </div>
+                  </div>
+
+                  <div className="modern-chart-card" style={{ cursor: 'pointer' }} onClick={() => handleNavigation('records')}>
+                    <div className="modern-chart-header">
+                      <div className="modern-chart-title">
+                        <div className="modern-chart-icon">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14,2 14,8 20,8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                          </svg>
+                        </div>
+                        <div className="modern-chart-info">
+                          <h3>View Records</h3>
+                          <p>Access inmate and visit records</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="modern-chart-container" style={{ 
+                      height: '1px'
+                    }}>
+                    </div>
+                  </div>
+
+                  <div className="modern-chart-card" style={{ cursor: 'pointer' }} onClick={() => handleNavigation('log')}>
+                    <div className="modern-chart-header">
+                      <div className="modern-chart-title">
+                        <div className="modern-chart-icon">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14,2 14,8 20,8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <line x1="10" y1="9" x2="9" y2="9"></line>
+                            <line x1="8" y1="9" x2="7" y2="9"></line>
+                          </svg>
+                        </div>
+                        <div className="modern-chart-info">
+                          <h3>Activity Logs</h3>
+                          <p>Review system activity trails</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="modern-chart-container" style={{ 
+                      height: '1px'
+                    }}>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Officer Recent Activity */}
+              <section className="modern-activity-section">
+                <div className="modern-activity-header">
+                  <div className="modern-activity-title">
+                    <h2>Recent Activity</h2>
+                    <p>Your latest actions and system updates</p>
+                  </div>
+                </div>
+                
+                <div className="modern-activity-list">
+                  <div className="modern-activity-item">
+                    <div className="modern-activity-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="20,6 9,17 4,12"></polyline>
+                      </svg>
+                    </div>
+                    <div className="modern-activity-content">
+                      <div className="modern-activity-title">Approved Visit Request</div>
+                      <div className="modern-activity-description">Approved visit for Inmate #12345 - Maria Santos</div>
+                      <div className="modern-activity-time">2 hours ago</div>
+                    </div>
+                    <div className="modern-activity-status">
+                      <span className="status-badge approved">Approved</span>
+                    </div>
+                  </div>
+
+                  <div className="modern-activity-item">
+                    <div className="modern-activity-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M1 1h6v6H1z"></path>
+                        <path d="M17 1h6v6h-6z"></path>
+                        <path d="M1 17h6v6H1z"></path>
+                        <path d="M17 17h6v6h-6z"></path>
+                      </svg>
+                    </div>
+                    <div className="modern-activity-content">
+                      <div className="modern-activity-title">Visitor ID Scanned</div>
+                      <div className="modern-activity-description">Verified visitor identification - John Doe</div>
+                      <div className="modern-activity-time">3 hours ago</div>
+                    </div>
+                    <div className="modern-activity-status">
+                      <span className="status-badge approved">Verified</span>
+                    </div>
+                  </div>
+
+                  <div className="modern-activity-item">
+                    <div className="modern-activity-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14,2 14,8 20,8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                      </svg>
+                    </div>
+                    <div className="modern-activity-content">
+                      <div className="modern-activity-title">Record Updated</div>
+                      <div className="modern-activity-description">Updated visit log for Inmate #98765</div>
+                      <div className="modern-activity-time">5 hours ago</div>
+                    </div>
+                    <div className="modern-activity-status">
+                      <span className="status-badge rescheduled">Updated</span>
+                    </div>
+                  </div>
+
+                  <div className="modern-activity-item">
+                    <div className="modern-activity-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </div>
+                    <div className="modern-activity-content">
+                      <div className="modern-activity-title">Visit Request Rejected</div>
+                      <div className="modern-activity-description">Rejected visit for Inmate #54321 - Invalid documentation</div>
+                      <div className="modern-activity-time">1 day ago</div>
+                    </div>
+                    <div className="modern-activity-status">
+                      <span className="status-badge rejected">Rejected</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </>
           } />
           
-          <Route path="/visit" element={<VisitRequests currentOfficer={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : null)} />} />
-          <Route path="/visit/:requestId" element={<VisitRequests currentOfficer={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : null)} />} />
+          <Route path="/visit" element={<VisitRequests currentOfficer={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : null)} onStatsChange={refreshDashboardStats} />} />
+          <Route path="/visit/:requestId" element={<VisitRequests currentOfficer={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : null)} onStatsChange={refreshDashboardStats} />} />
           <Route path="/scan" element={<Scan />} />
           <Route path="/records" element={<Records />} />
           <Route path="/log" element={<LogTrails officerFilter={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : null)} />} />
