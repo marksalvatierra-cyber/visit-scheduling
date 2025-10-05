@@ -366,20 +366,32 @@ const VisitRequests = ({ currentOfficer = null }) => {
 
   const generateAndShowQRCode = async (request) => {
     try {
-      // Create QR code data
-      const qrData = {
+      console.log('🎫 Generating QR code for request:', request.id);
+      
+      // Create visit data for QR generation - include all relevant fields
+      const visitData = {
         visitId: request.id,
         clientId: request.clientId,
         clientName: request.clientName,
         visitDate: request.visitDate,
         visitTime: request.visitTime,
         inmateName: request.inmateName,
+        relationship: request.relationship,
+        purpose: request.purpose || request.reason,
+        reason: request.reason || request.purpose,
+        clientEmail: request.clientEmail,
         approvedAt: new Date().toISOString(),
-        expiresAt: new Date(new Date(request.visitDate).getTime() + 24 * 60 * 60 * 1000).toISOString(),
-        status: 'approved',
-        facility: 'Bureau of Corrections',
-        qrVersion: '1.0'
+        expiresAt: new Date(new Date(request.visitDate).getTime() + 24 * 60 * 60 * 1000).toISOString()
       };
+
+      // Generate and store QR code in Firebase
+      const qrData = await firebaseService.generateVisitQRCode(visitData);
+      
+      if (!qrData) {
+        throw new Error('Failed to generate QR code data');
+      }
+
+      console.log('✅ QR code stored in Firebase:', qrData);
 
       // Generate QR code image
       const qrCodeUrl = await QRCode.toDataURL(JSON.stringify(qrData), {

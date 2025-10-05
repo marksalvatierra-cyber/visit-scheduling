@@ -791,7 +791,7 @@ const OfficerDashboard = () => {
           
           <Route path="/visit" element={<VisitRequests currentOfficer={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : null)} onStatsChange={refreshDashboardStats} />} />
           <Route path="/visit/:requestId" element={<VisitRequests currentOfficer={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : null)} onStatsChange={refreshDashboardStats} />} />
-          <Route path="/scan" element={<Scan />} />
+          <Route path="/scan" element={<Scan currentOfficer={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : null)} />} />
           <Route path="/records" element={<Records />} />
           <Route path="/log" element={<LogTrails officerFilter={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : null)} />} />
           <Route path="/profile" element={<OfficerProfile onProfilePictureUpdate={updateProfilePicture} />} />

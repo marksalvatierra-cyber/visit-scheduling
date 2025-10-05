@@ -905,17 +905,123 @@ async sendPasswordReset(email) {
             const qrDoc = await this.db.collection('visitQRCodes').doc(data.visitId).get();
             
             if (!qrDoc.exists) {
-                return {
-                    valid: false,
-                    reason: 'QR code not found in system',
-                    status: 'invalid'
-                };
+                // QR code not in visitQRCodes collection, try to validate against visit requests
+                console.log('QR code not found in visitQRCodes, checking visit requests...');
+                
+                try {
+                    const visitDoc = await this.db.collection('visitRequests').doc(data.visitId).get();
+                    
+                    if (!visitDoc.exists) {
+                        return {
+                            valid: false,
+                            reason: 'Visit request not found in system',
+                            status: 'invalid'
+                        };
+                    }
+                    
+                    const visitData = visitDoc.data();
+                    
+                    // Check if visit is approved
+                    if (visitData.status !== 'approved') {
+                        return {
+                            valid: false,
+                            reason: `Visit request status is "${visitData.status}", not approved`,
+                            status: 'not_approved'
+                        };
+                    }
+                    
+                    // Check basic QR data consistency
+                    if (visitData.clientName !== data.clientName || 
+                        visitData.inmateName !== data.inmateName ||
+                        visitData.visitDate !== data.visitDate) {
+                        return {
+                            valid: false,
+                            reason: 'QR code data does not match visit request',
+                            status: 'data_mismatch'
+                        };
+                    }
+                    
+                    // Enhanced visit date/time validation
+                    const now = new Date();
+                    const visitDate = new Date(data.visitDate);
+                    
+                    // Parse visit time (assuming format like "14:30" or "2:30 PM")
+                    let visitDateTime;
+                    if (data.visitTime) {
+                        const timeStr = data.visitTime;
+                        const [hours, minutes] = timeStr.split(':').map(num => parseInt(num));
+                        visitDateTime = new Date(visitDate);
+                        visitDateTime.setHours(hours, minutes, 0, 0);
+                    } else {
+                        visitDateTime = visitDate;
+                    }
+                    
+                    // Allow entry 15 minutes before scheduled time
+                    const allowedEntryTime = new Date(visitDateTime.getTime() - 15 * 60 * 1000); // 15 mins before
+                    
+                    // Visit expires 1 hour after scheduled time
+                    const expirationTime = new Date(visitDateTime.getTime() + 60 * 60 * 1000); // 1 hour after
+                    
+                    console.log('🕒 Time validation:', {
+                        now: now.toISOString(),
+                        visitDateTime: visitDateTime.toISOString(),
+                        allowedEntryTime: allowedEntryTime.toISOString(),
+                        expirationTime: expirationTime.toISOString()
+                    });
+                    
+                    if (now < allowedEntryTime) {
+                        return {
+                            valid: false,
+                            reason: `Too early for visit. Entry allowed from ${allowedEntryTime.toLocaleTimeString()}`,
+                            status: 'too_early',
+                            allowedTime: allowedEntryTime.toISOString(),
+                            visitTime: visitDateTime.toISOString()
+                        };
+                    }
+                    
+                    if (now > expirationTime) {
+                        return {
+                            valid: false,
+                            reason: `Visit time has expired. Visit was scheduled for ${visitDateTime.toLocaleString()}`,
+                            status: 'expired',
+                            expirationTime: expirationTime.toISOString(),
+                            visitTime: visitDateTime.toISOString()
+                        };
+                    }
+                    
+                    // QR code appears valid but wasn't stored in system - create record for future reference
+                    console.log('Creating QR code record for legacy QR code...');
+                    await this.generateVisitQRCode({
+                        visitId: data.visitId,
+                        clientId: data.clientId,
+                        clientName: data.clientName,
+                        visitDate: data.visitDate,
+                        visitTime: data.visitTime,
+                        inmateName: data.inmateName,
+                        approvedAt: data.approvedAt || new Date().toISOString(),
+                        expiresAt: data.expiresAt || new Date(visitDate.getTime() + 24 * 60 * 60 * 1000).toISOString()
+                    });
+                    
+                    return {
+                        valid: true,
+                        status: 'valid',
+                        visitData: data,
+                        isLegacyQR: true,
+                        message: 'QR code validated against visit request (legacy format)'
+                    };
+                    
+                } catch (error) {
+                    console.error('Error validating against visit requests:', error);
+                    return {
+                        valid: false,
+                        reason: 'Unable to validate QR code against system records',
+                        status: 'validation_error'
+                    };
+                }
             }
             
             const qrRecord = qrDoc.data();
             const now = new Date();
-            const expirationDate = new Date(data.expiresAt);
-            const visitDate = new Date(data.visitDate);
             
             // Check if QR code is still valid
             if (!qrRecord.isValid) {
@@ -926,22 +1032,50 @@ async sendPasswordReset(email) {
                 };
             }
             
-            // Check if QR code has expired
-            if (now > expirationDate) {
+            // Enhanced visit date/time validation
+            const visitDate = new Date(data.visitDate);
+            
+            // Parse visit time (assuming format like "14:30" or "2:30 PM")
+            let visitDateTime;
+            if (data.visitTime) {
+                const timeStr = data.visitTime;
+                const [hours, minutes] = timeStr.split(':').map(num => parseInt(num));
+                visitDateTime = new Date(visitDate);
+                visitDateTime.setHours(hours, minutes, 0, 0);
+            } else {
+                visitDateTime = visitDate;
+            }
+            
+            // Allow entry 15 minutes before scheduled time
+            const allowedEntryTime = new Date(visitDateTime.getTime() - 15 * 60 * 1000); // 15 mins before
+            
+            // Visit expires 1 hour after scheduled time
+            const expirationTime = new Date(visitDateTime.getTime() + 60 * 60 * 1000); // 1 hour after
+            
+            console.log('🕒 Time validation (stored QR):', {
+                now: now.toISOString(),
+                visitDateTime: visitDateTime.toISOString(),
+                allowedEntryTime: allowedEntryTime.toISOString(),
+                expirationTime: expirationTime.toISOString()
+            });
+            
+            if (now < allowedEntryTime) {
                 return {
                     valid: false,
-                    reason: 'QR code has expired',
-                    status: 'expired',
-                    expirationDate: expirationDate.toISOString()
+                    reason: `Too early for visit. Entry allowed from ${allowedEntryTime.toLocaleTimeString()}`,
+                    status: 'too_early',
+                    allowedTime: allowedEntryTime.toISOString(),
+                    visitTime: visitDateTime.toISOString()
                 };
             }
             
-            // Check if visit date has passed
-            if (now > new Date(visitDate.getTime() + 24 * 60 * 60 * 1000)) {
+            if (now > expirationTime) {
                 return {
                     valid: false,
-                    reason: 'Visit date has passed',
-                    status: 'date_passed'
+                    reason: `Visit time has expired. Visit was scheduled for ${visitDateTime.toLocaleString()}`,
+                    status: 'expired',
+                    expirationTime: expirationTime.toISOString(),
+                    visitTime: visitDateTime.toISOString()
                 };
             }
             

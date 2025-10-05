@@ -1,27 +1,80 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
+import firebaseService from '../firebase-services.js';
 import './Scan.css';
 import './shared.css';
 
-const Scan = () => {
+const Scan = ({ currentOfficer = null }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [qrImage, setQrImage] = useState(null);
+  const [scannerInstance, setScannerInstance] = useState(null);
+  const [validationLoading, setValidationLoading] = useState(false);
   const fileInputRef = useRef(null);
+  const scannerRef = useRef(null);
 
   const startQrScanner = async () => {
     try {
       setIsScanning(true);
       
-      // For now, we'll simulate QR scanning
-      // In a real implementation, you would use a QR library like html5-qrcode
-      alert('QR Scanner functionality requires a QR code library to be installed.\n\nTo enable this feature, install:\n\nnpm install html5-qrcode\n\nFor now, please use the "Upload QR" option to test the functionality.');
+      // Clear any existing scanner
+      if (scannerInstance) {
+        await scannerInstance.stop();
+      }
+
+      // Create scanner configuration
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+        showTorchButtonIfSupported: true,
+        showZoomSliderIfSupported: true,
+        defaultZoomValueIfSupported: 2,
+        rememberLastUsedCamera: true
+      };
+
+      // Initialize scanner
+      const scanner = new Html5QrcodeScanner(
+        "qr-reader",
+        config,
+        false
+      );
+
+      // Set up success callback
+      const onScanSuccess = (decodedText, decodedResult) => {
+        console.log('QR Code detected:', decodedText);
+        scanner.clear();
+        setIsScanning(false);
+        handleQrCodeDetected(decodedText);
+      };
+
+      // Set up error callback  
+      const onScanFailure = (error) => {
+        // Handle scan failure - usually just means no QR code in view
+        // Don't console.log every frame, it's too noisy
+      };
+
+      scanner.render(onScanSuccess, onScanFailure);
+      setScannerInstance(scanner);
       
-      setIsScanning(false);
     } catch (err) {
-      alert('Unable to start camera: ' + err);
+      console.error('Camera error:', err);
+      alert('Unable to start camera. Please make sure you have granted camera permissions and try again.');
       setIsScanning(false);
     }
+  };
+
+  const stopScanner = async () => {
+    if (scannerInstance) {
+      try {
+        await scannerInstance.clear();
+        setScannerInstance(null);
+      } catch (error) {
+        console.error('Error stopping scanner:', error);
+      }
+    }
+    setIsScanning(false);
   };
 
   const handleQrFileUpload = async (event) => {
@@ -36,75 +89,240 @@ const Scan = () => {
       };
       reader.readAsDataURL(file);
 
-      // Simulate QR code reading with mock data
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Use Html5Qrcode to decode the image
+      const html5QrCode = new Html5Qrcode("temp-qr-reader");
       
-      const mockQrData = {
-        visitorName: 'John Doe',
-        inmateName: 'Jane Smith',
-        visitDate: '2024-03-25',
-        time: '14:30',
-        visitId: 'VR-001',
-        purpose: 'Family Visit',
-        relationship: 'Spouse'
-      };
-
-      processQrResult(mockQrData);
-    } catch (err) {
-      alert('Unable to read QR code from image: ' + err);
-    }
-  };
-
-  const processQrResult = (data) => {
-    // Determine status
-    let status = 'Valid';
-    let statusColor = '#43b649';
-    let statusReason = '';
-    
-    const visitDateTimeStr = (data.visitDate || '') + ' ' + (data.time || '');
-    const visitDateTime = new Date(visitDateTimeStr);
-    const now = new Date();
-    
-    if (!data.visitDate || !data.time) {
-      status = 'Invalid';
-      statusColor = '#d32f2f';
-      statusReason = 'Missing visit date or time.';
-    } else if (isNaN(visitDateTime.getTime())) {
-      status = 'Invalid';
-      statusColor = '#d32f2f';
-      statusReason = 'Invalid date/time format.';
-    } else {
-      const validFrom = new Date(visitDateTime.getTime() - 15 * 60000); // 15 mins before
-      const validUntil = new Date(visitDateTime.getTime() + 60 * 60000); // 1 hour after
-      
-      if (now < validFrom) {
-        status = 'Invalid';
-        statusColor = '#d32f2f';
-        statusReason = 'Too early to use QR code.';
-      } else if (now > validUntil) {
-        status = 'Invalid';
-        statusColor = '#d32f2f';
-        statusReason = 'QR code expired.';
+      try {
+        const qrCodeMessage = await html5QrCode.scanFile(file, true);
+        console.log('QR Code from file:', qrCodeMessage);
+        handleQrCodeDetected(qrCodeMessage);
+      } catch (error) {
+        console.error('Error reading QR from file:', error);
+        alert('Could not read QR code from this image. Please ensure the image contains a clear, valid QR code.');
       }
+    } catch (err) {
+      console.error('File processing error:', err);
+      alert('Unable to process image file: ' + err.message);
     }
-
-    setScanResult({
-      data,
-      status,
-      statusColor,
-      statusReason,
-      isValid: status === 'Valid'
-    });
   };
 
-  const resetScan = () => {
+  const handleQrCodeDetected = async (qrText) => {
+    setValidationLoading(true);
+    
+    try {
+      console.log('Processing QR Code:', qrText);
+      
+      // Try to parse QR code data
+      let qrData;
+      try {
+        qrData = JSON.parse(qrText);
+      } catch (parseError) {
+        throw new Error('Invalid QR code format. This does not appear to be a valid visit QR code.');
+      }
+
+      // Validate QR code structure
+      if (!qrData.visitId || !qrData.clientName || !qrData.inmateName) {
+        throw new Error('QR code is missing required visit information.');
+      }
+
+      console.log('Parsed QR Data:', qrData);
+
+      // Validate QR code with Firebase
+      const validationResult = await firebaseService.validateQRCode(qrData);
+      console.log('Validation result:', validationResult);
+
+      if (validationResult.valid) {
+        // QR code is valid, mark as used (skip if it's a legacy QR that wasn't in system)
+        if (!validationResult.isLegacyQR) {
+          await firebaseService.markQRCodeAsUsed(qrData.visitId, getCurrentOfficerName());
+        }
+        
+        // Create log entry for successful scan
+        await firebaseService.createLogEntry({
+          officerName: getCurrentOfficerName(),
+          action: 'scanned',
+          clientName: qrData.clientName,
+          visitorName: qrData.clientName,
+          inmateName: qrData.inmateName,
+          visitDate: qrData.visitDate,
+          visitTime: qrData.visitTime,
+          purpose: 'QR Code Scan Entry',
+          reason: validationResult.isLegacyQR ? 'Legacy QR code validated and visitor entry authorized' : 'Visitor entry validated via QR code scan',
+          visitPurpose: 'Entry Validation',
+          relationship: 'N/A',
+          visitRequestId: qrData.visitId,
+          scanResult: 'Valid',
+          qrType: validationResult.isLegacyQR ? 'Legacy' : 'Standard',
+          timestamp: new Date()
+        });
+
+        setScanResult({
+          data: {
+            visitorName: qrData.clientName,
+            inmateName: qrData.inmateName,
+            visitDate: qrData.visitDate,
+            time: qrData.visitTime,
+            visitId: qrData.visitId,
+            purpose: qrData.purpose || qrData.reason || 'Visit Entry',
+            relationship: qrData.relationship || 'Verified Visitor',
+            facility: qrData.facility || 'Bureau of Corrections',
+            approvedAt: qrData.approvedAt,
+            expiresAt: qrData.expiresAt,
+            clientEmail: qrData.clientEmail
+          },
+          status: 'Valid',
+          statusColor: '#10b981',
+          statusReason: validationResult.isLegacyQR ? 
+            'Legacy QR code validated. Visitor authorized for entry.' : 
+            'QR code successfully validated. Visitor authorized for entry.',
+          isValid: true,
+          validationDetails: validationResult,
+          isLegacy: validationResult.isLegacyQR
+        });
+      } else {
+        // QR code is invalid - determine status and color based on validation result
+        let status, statusColor;
+        
+        switch (validationResult.status) {
+          case 'too_early':
+            status = 'Too Early';
+            statusColor = '#f59e0b'; // Orange
+            break;
+          case 'expired':
+            status = 'Expired';
+            statusColor = '#ef4444'; // Red
+            break;
+          case 'already_used':
+            status = 'Already Used';
+            statusColor = '#ef4444'; // Red
+            break;
+          case 'invalidated':
+            status = 'Invalidated';
+            statusColor = '#ef4444'; // Red
+            break;
+          case 'not_approved':
+            status = 'Not Approved';
+            statusColor = '#ef4444'; // Red
+            break;
+          case 'data_mismatch':
+            status = 'Data Mismatch';
+            statusColor = '#ef4444'; // Red
+            break;
+          default:
+            status = 'Invalid';
+            statusColor = '#ef4444'; // Red
+        }
+
+        setScanResult({
+          data: {
+            visitorName: qrData.clientName || 'Unknown',
+            inmateName: qrData.inmateName || 'Unknown',
+            visitDate: qrData.visitDate || 'Unknown',
+            time: qrData.visitTime || 'Unknown',
+            visitId: qrData.visitId || 'Unknown',
+            purpose: qrData.purpose || qrData.reason || (validationResult.status === 'too_early' ? 'Scheduled Visit' : 'Invalid Visit'),
+            relationship: qrData.relationship || 'Unknown',
+            allowedTime: validationResult.allowedTime,
+            visitTime: validationResult.visitTime,
+            expirationTime: validationResult.expirationTime,
+            clientEmail: qrData.clientEmail
+          },
+          status: status,
+          statusColor: statusColor,
+          statusReason: validationResult.reason || 'QR code validation failed.',
+          isValid: false,
+          validationDetails: validationResult
+        });
+
+        // Log failed scan attempt
+        await firebaseService.createLogEntry({
+          officerName: getCurrentOfficerName(),
+          action: 'scan_failed',
+          clientName: qrData.clientName || 'Unknown',
+          visitorName: qrData.clientName || 'Unknown',
+          inmateName: qrData.inmateName || 'Unknown',
+          visitDate: qrData.visitDate || 'Unknown',
+          visitTime: qrData.visitTime || 'Unknown',
+          purpose: 'Failed QR Code Scan',
+          reason: validationResult.reason || 'QR validation failed',
+          visitPurpose: 'Entry Validation Failed',
+          relationship: 'N/A',
+          visitRequestId: qrData.visitId || 'Unknown',
+          scanResult: 'Invalid',
+          timestamp: new Date()
+        });
+      }
+
+    } catch (error) {
+      console.error('QR validation error:', error);
+      
+      setScanResult({
+        data: {
+          visitorName: 'Unknown',
+          inmateName: 'Unknown',
+          visitDate: 'Unknown',
+          time: 'Unknown',
+          visitId: 'Unknown',
+          purpose: 'Invalid QR Code',
+          relationship: 'Unknown',
+          clientEmail: 'Unknown'
+        },
+        status: 'Error',
+        statusColor: '#ef4444',
+        statusReason: error.message || 'Failed to process QR code.',
+        isValid: false
+      });
+
+      // Log error
+      await firebaseService.createLogEntry({
+        officerName: getCurrentOfficerName(),
+        action: 'scan_error',
+        clientName: 'Unknown',
+        visitorName: 'Unknown',
+        inmateName: 'Unknown',
+        visitDate: 'Unknown',
+        visitTime: 'Unknown',
+        purpose: 'QR Code Error',
+        reason: error.message || 'QR processing error',
+        visitPurpose: 'Scan Error',
+        relationship: 'N/A',
+        visitRequestId: 'Unknown',
+        scanResult: 'Error',
+        timestamp: new Date()
+      });
+    } finally {
+      setValidationLoading(false);
+    }
+  };
+
+  const getCurrentOfficerName = () => {
+    return currentOfficer || 'System Officer';
+  };
+
+  const resetScan = async () => {
+    // Stop scanner if running
+    if (isScanning && scannerInstance) {
+      await stopScanner();
+    }
+    
     setScanResult(null);
     setShowDetails(false);
     setQrImage(null);
+    setValidationLoading(false);
+    
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
+
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      if (scannerInstance) {
+        scannerInstance.clear().catch(console.error);
+      }
+    };
+  }, [scannerInstance]);
 
   const toggleDetails = () => {
     setShowDetails(!showDetails);
@@ -125,6 +343,51 @@ const Scan = () => {
         </div>
           </div>
 
+      {/* Validation Loading Overlay */}
+      {validationLoading && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '32px',
+            textAlign: 'center',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)'
+          }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              border: '4px solid #e5e7eb',
+              borderTop: '4px solid var(--primary-color)',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 16px auto'
+            }}></div>
+            <div style={{ fontSize: '16px', fontWeight: '600', color: 'var(--gray-900)' }}>
+              Validating QR Code...
+            </div>
+            <div style={{ fontSize: '14px', color: 'var(--gray-600)', marginTop: '4px' }}>
+              Checking with system database
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QR Reader Container (Hidden) */}
+      <div id="qr-reader" style={{ display: isScanning ? 'block' : 'none' }}></div>
+      <div id="temp-qr-reader" style={{ display: 'none' }}></div>
+
       {/* New Design: Split Layout */}
       <div style={{ 
         display: 'flex', 
@@ -134,7 +397,7 @@ const Scan = () => {
         padding: '0 24px',
         gap: '48px'
       }}>
-        {!scanResult ? (
+        {!scanResult && !isScanning ? (
           <>
             {/* Left Side - Visual QR Scanner */}
             <div style={{
@@ -272,7 +535,7 @@ const Scan = () => {
               <button 
                     className="modern-btn-primary" 
                 onClick={startQrScanner}
-                disabled={isScanning}
+                disabled={isScanning || validationLoading}
                     style={{
                       padding: '16px 24px',
                       fontSize: '16px',
@@ -352,6 +615,76 @@ const Scan = () => {
               </div>
           </div>
           </>
+        ) : isScanning ? (
+          /* Camera Scanner View */
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '24px',
+            width: '100%',
+            maxWidth: '600px'
+          }}>
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.9)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '20px',
+              padding: '24px',
+              width: '100%',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '16px'
+              }}>
+                <h3 style={{
+                  fontSize: '20px',
+                  fontWeight: '600',
+                  color: 'var(--gray-900)',
+                  margin: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    background: '#10b981',
+                    borderRadius: '50%',
+                    animation: 'pulse 2s infinite'
+                  }}></div>
+                  Camera Active
+                </h3>
+                <button
+                  onClick={stopScanner}
+                  style={{
+                    background: '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Stop Scanner
+                </button>
+              </div>
+              
+              <div style={{
+                fontSize: '14px',
+                color: 'var(--gray-600)',
+                textAlign: 'center',
+                marginBottom: '16px'
+              }}>
+                Position the QR code within the camera view. The scanner will automatically detect and process valid visit QR codes.
+              </div>
+            </div>
+          </div>
         ) : (
           /* Result Display - New Design */
           <div style={{
@@ -482,14 +815,48 @@ const Scan = () => {
                     <span className="modern-detail-label">Visitor Name:</span>
                     <span className="modern-detail-value">{scanResult.data.visitorName}</span>
                   </div>
+                  {scanResult.data.clientEmail && scanResult.data.clientEmail !== 'Unknown' && (
+                    <div className="modern-detail-item">
+                      <span className="modern-detail-label">Visitor Email:</span>
+                      <span className="modern-detail-value">{scanResult.data.clientEmail}</span>
+                    </div>
+                  )}
                   <div className="modern-detail-item">
                     <span className="modern-detail-label">Inmate Name:</span>
                     <span className="modern-detail-value">{scanResult.data.inmateName}</span>
                   </div>
                   <div className="modern-detail-item">
-                    <span className="modern-detail-label">Date/Time:</span>
+                    <span className="modern-detail-label">Visit Date/Time:</span>
                     <span className="modern-detail-value">{scanResult.data.visitDate} {scanResult.data.time}</span>
                   </div>
+                  
+                  {/* Show additional time info for time-related validation results */}
+                  {scanResult.validationDetails?.status === 'too_early' && scanResult.data.allowedTime && (
+                    <div className="modern-detail-item">
+                      <span className="modern-detail-label">Entry Allowed From:</span>
+                      <span className="modern-detail-value" style={{ color: '#f59e0b', fontWeight: '600' }}>
+                        {new Date(scanResult.data.allowedTime).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {scanResult.validationDetails?.status === 'expired' && scanResult.data.expirationTime && (
+                    <div className="modern-detail-item">
+                      <span className="modern-detail-label">Expired At:</span>
+                      <span className="modern-detail-value" style={{ color: '#ef4444', fontWeight: '600' }}>
+                        {new Date(scanResult.data.expirationTime).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {scanResult.isValid && (
+                    <div className="modern-detail-item">
+                      <span className="modern-detail-label">Current Time:</span>
+                      <span className="modern-detail-value" style={{ color: '#10b981', fontWeight: '600' }}>
+                        {new Date().toLocaleString()} ✓
+                      </span>
+                    </div>
+                  )}
                   <div className="modern-detail-item">
                     <span className="modern-detail-label">Purpose:</span>
                     <span className="modern-detail-value">{scanResult.data.purpose}</span>
@@ -499,12 +866,36 @@ const Scan = () => {
                     <span className="modern-detail-value">{scanResult.data.relationship}</span>
                   </div>
                   <div className="modern-detail-item">
+                    <span className="modern-detail-label">Visit ID:</span>
+                    <span className="modern-detail-value">{scanResult.data.visitId}</span>
+                  </div>
+                  <div className="modern-detail-item">
                     <span className="modern-detail-label">Status:</span>
-                    <span className="modern-status-badge" style={{ color: scanResult.statusColor }}>
-                      {scanResult.status}
-                    </span>
-                    {scanResult.status === 'Invalid' && (
-                      <span className="modern-status-reason"> ({scanResult.statusReason})</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '50%',
+                        background: scanResult.statusColor,
+                        boxShadow: `0 0 0 3px ${scanResult.statusColor}20`
+                      }}></div>
+                      <span style={{ 
+                        color: scanResult.statusColor, 
+                        fontWeight: '600',
+                        fontSize: '16px'
+                      }}>
+                        {scanResult.status}
+                      </span>
+                    </div>
+                    {scanResult.statusReason && (
+                      <div style={{ 
+                        fontSize: '14px', 
+                        color: 'var(--gray-600)', 
+                        marginTop: '4px',
+                        fontStyle: 'italic' 
+                      }}>
+                        {scanResult.statusReason}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -542,6 +933,51 @@ const Scan = () => {
         @keyframes pulse {
           0%, 100% { opacity: 0.3; transform: scale(1); }
           50% { opacity: 1; transform: scale(1.2); }
+        }
+        
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        
+        #qr-reader {
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+          background: white;
+        }
+        
+        #qr-reader video {
+          border-radius: 16px;
+        }
+        
+        #qr-reader__scan_region {
+          border-radius: 16px !important;
+        }
+        
+        .modern-detail-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          padding: 8px 0;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .modern-detail-item:last-child {
+          border-bottom: none;
+        }
+        
+        .modern-detail-label {
+          font-weight: 600;
+          color: var(--gray-700);
+          min-width: 120px;
+        }
+        
+        .modern-detail-value {
+          font-weight: 500;
+          color: var(--gray-900);
+          text-align: right;
+          flex: 1;
         }
       `}</style>
     </div>

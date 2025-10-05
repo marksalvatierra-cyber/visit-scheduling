@@ -1536,7 +1536,7 @@ const markAllNotificationsRead = async () => {
           <Route path="/visit" element={<VisitRequests />} />
           <Route path="/visit/:requestId" element={<VisitRequests />} />
           
-          <Route path="/scan" element={<Scan />} />
+          <Route path="/scan" element={<Scan currentOfficer={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : 'Admin User')} />} />
           
           <Route path="/inmate" element={<AddInmate />} />
           
