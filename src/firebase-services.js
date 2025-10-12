@@ -14,6 +14,7 @@ class FirebaseService {
     constructor() {
         this.auth = firebase.auth();
         this.db = firebase.firestore();
+        this.storage = firebase.storage();
         this.currentUser = null;
         // Set session-only persistence
         this.auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
@@ -40,15 +41,34 @@ class FirebaseService {
         }
     }
 
-    async signUp(email, password, userData) {
+    async signUp(email, password, userData, idFile = null) {
         try {
             const userCredential = await this.auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
+            
+            let idFileUrl = null;
+            
+            // Upload ID file if provided
+            if (idFile) {
+                try {
+                    const uploadResult = await this.uploadFile(idFile, `users/${user.uid}/identity`);
+                    if (uploadResult.success) {
+                        idFileUrl = uploadResult.downloadURL;
+                    } else {
+                        console.error('Failed to upload ID file:', uploadResult.error);
+                        // Continue registration even if file upload fails
+                    }
+                } catch (uploadError) {
+                    console.error('Error uploading ID file:', uploadError);
+                    // Continue registration even if file upload fails
+                }
+            }
             
             // Save additional user data to Firestore
             await this.db.collection('users').doc(user.uid).set({
                 ...userData,
                 email: user.email,
+                idFileUrl: idFileUrl,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             
@@ -56,6 +76,34 @@ class FirebaseService {
             return { success: true, user: this.currentUser };
         } catch (error) {
             return { success: false, error: error.message };
+        }
+    }
+
+    // File upload method
+    async uploadFile(file, path) {
+        try {
+            const storageRef = this.storage.ref();
+            const fileName = `${Date.now()}_${file.name}`;
+            const fileRef = storageRef.child(`${path}/${fileName}`);
+            
+            // Upload file
+            const snapshot = await fileRef.put(file);
+            
+            // Get download URL
+            const downloadURL = await snapshot.ref.getDownloadURL();
+            
+            return {
+                success: true,
+                downloadURL: downloadURL,
+                fileName: fileName,
+                path: `${path}/${fileName}`
+            };
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
     // Add this method to your FirebaseService class
