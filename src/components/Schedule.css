@@ -227,11 +227,11 @@ body {
 }
 
 .info-card {
-  background: white;
-  border: 1px solid var(--gray-200);
-  border-radius: var(--border-radius);
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   padding: 1rem;
-  box-shadow: var(--shadow-sm);
+  border: none;
 }
 
 .info-card-header {
