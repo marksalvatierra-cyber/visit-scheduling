@@ -1,5 +1,5 @@
 /* ClientDashboard styles - based on AdminDashboard for consistency */
-@import './AdminDashboard.css';
+@import "./AdminDashboard.css";
 
 /* Navigation Badge for Notifications */
 .nav-badge {
@@ -31,22 +31,22 @@
     flex-direction: column;
     width: 100%;
   }
-  
+
   .modern-btn-primary,
   .modern-btn-secondary {
     width: 100%;
     justify-content: center;
   }
-  
+
   .modern-charts-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
-  
+
   .modern-chart-card {
     padding: 1rem;
   }
-  
+
   .modern-chart-container {
     height: 200px;
   }
@@ -59,6 +59,14 @@
   cursor: pointer;
   user-select: none;
 }
+/* Ensure Welcome back card is always white */
+.modern-records-header {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 1.5rem 2rem;
+  margin-bottom: 2rem;
+}
 
 .modern-stat-card:active {
   transform: translateY(-2px);
@@ -67,7 +75,7 @@
 
 /* Add a subtle indicator that cards are clickable */
 .modern-stat-card::after {
-  content: '→';
+  content: "→";
   position: absolute;
   top: 16px;
   right: 16px;
