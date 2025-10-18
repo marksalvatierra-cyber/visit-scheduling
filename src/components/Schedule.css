@@ -76,6 +76,7 @@ body {
   grid-template-columns: 2fr 1fr;
   gap: 2rem;
   align-items: start;
+  background: var(--gray-50) !important;
 }
 
 /* Form section */
