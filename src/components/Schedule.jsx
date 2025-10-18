@@ -248,7 +248,7 @@ const Schedule = () => {
   };
 
   return (
-  <div className="schedule-page">
+  <div className="settings-page">
       <style>
         {`
           @keyframes spin {
