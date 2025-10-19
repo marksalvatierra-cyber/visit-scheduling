@@ -61,14 +61,17 @@ function App() {
                   </div>
                 </div>
                 <div className="banner-side">
-                  <div className="side-banner hiring-banner">
-                    <div className="hiring-image-container">
-                      <img src="/image/Hiring.png" alt="Panata sa Bagong Pilipinas" />
-                    </div>
-                  </div>
-                  <div className="side-banner vision-banner">
-                    <div className="vision-image-container">
-                      <img src="/image/Info.png" alt="Panata sa Bagong Pilipinas" />
+                  <div className="side-banner tips-banner">
+                    <div className="tips-card">
+                      <h2 className="tips-title">Tips for Scheduling Your Visit</h2>
+                      <ul className="tips-list">
+                        <li>Check available dates before planning your visit.</li>
+                        <li>Prepare all required documents (valid ID, authorization, etc.).</li>
+                        <li>Review visitor guidelines and restrictions.</li>
+                      </ul>
+                      <button className="schedule-btn" onClick={handleLoginClick}>
+                        Schedule Now
+                      </button>
                     </div>
                   </div>
                 </div>

@@ -27,6 +27,7 @@ class FirebaseService {
     normalizeStatus(status) {
         const s = (status || '').toLowerCase();
         if (s === 'reschedule') return 'rescheduled';
+        if (s === 'reject') return 'rejected';
         return s;
     }
 
