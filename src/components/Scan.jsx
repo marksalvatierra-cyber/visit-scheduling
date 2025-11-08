@@ -11,8 +11,13 @@ const Scan = ({ currentOfficer = null }) => {
   const [qrImage, setQrImage] = useState(null);
   const [scannerInstance, setScannerInstance] = useState(null);
   const [validationLoading, setValidationLoading] = useState(false);
+  // Hardware scanner states
+  const [scannerMode, setScannerMode] = useState('hardware'); // 'hardware' or 'camera'
+  const [hardwareScannerInput, setHardwareScannerInput] = useState('');
+  const [isHardwareScannerReady, setIsHardwareScannerReady] = useState(true);
   const fileInputRef = useRef(null);
   const scannerRef = useRef(null);
+  const hardwareScannerInputRef = useRef(null);
 
   const startQrScanner = async () => {
     try {
@@ -299,6 +304,67 @@ const Scan = ({ currentOfficer = null }) => {
     return currentOfficer || 'System Officer';
   };
 
+  // Hardware scanner functions
+  const handleHardwareScannerInput = (event) => {
+    const value = event.target.value;
+    setHardwareScannerInput(value);
+  };
+
+  const handleHardwareScannerKeyDown = (event) => {
+    if (event.key === 'Enter' && hardwareScannerInput.trim()) {
+      event.preventDefault();
+      processHardwareScannerInput();
+    }
+  };
+
+  const processHardwareScannerInput = async () => {
+    const scannedData = hardwareScannerInput.trim();
+    if (!scannedData) return;
+
+    console.log('Hardware scanner input:', scannedData);
+    setIsHardwareScannerReady(false);
+    
+    // Clear the input field
+    setHardwareScannerInput('');
+    
+    // Generate QR code image for display
+    try {
+      // Dynamically import QRCode library
+      const QRCode = await import('qrcode');
+      const qrDataURL = await QRCode.toDataURL(scannedData, {
+        width: 180,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+      
+      // Store the QR image for display
+      setQrImage(qrDataURL);
+    } catch (error) {
+      console.warn('Could not generate QR code image:', error);
+      // Continue without QR image if generation fails
+    }
+    
+    // Process the scanned QR code using existing validation logic
+    await handleQrCodeDetected(scannedData);
+    
+    // Re-enable scanner after a short delay
+    setTimeout(() => {
+      setIsHardwareScannerReady(true);
+      if (hardwareScannerInputRef.current) {
+        hardwareScannerInputRef.current.focus();
+      }
+    }, 2000);
+  };
+
+  const focusHardwareScanner = () => {
+    if (scannerMode === 'hardware' && hardwareScannerInputRef.current && isHardwareScannerReady) {
+      setTimeout(() => hardwareScannerInputRef.current?.focus(), 100);
+    }
+  };
+
   const resetScan = async () => {
     // Stop scanner if running
     if (isScanning && scannerInstance) {
@@ -324,6 +390,25 @@ const Scan = ({ currentOfficer = null }) => {
     };
   }, [scannerInstance]);
 
+  // Auto-focus hardware scanner input when in hardware mode
+  useEffect(() => {
+    focusHardwareScanner();
+  }, [scannerMode, isHardwareScannerReady, scanResult]);
+
+  // Re-focus scanner input when clicking anywhere on the page (hardware mode)
+  useEffect(() => {
+    const handlePageClick = () => {
+      if (scannerMode === 'hardware' && !scanResult) {
+        focusHardwareScanner();
+      }
+    };
+
+    if (scannerMode === 'hardware') {
+      document.addEventListener('click', handlePageClick);
+      return () => document.removeEventListener('click', handlePageClick);
+    }
+  }, [scannerMode, scanResult]);
+
   const toggleDetails = () => {
     setShowDetails(!showDetails);
   };
@@ -341,7 +426,43 @@ const Scan = ({ currentOfficer = null }) => {
           </svg>
           Scan QR Code
         </div>
-          </div>
+        
+        {/* Scanner Mode Toggle */}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={() => setScannerMode('hardware')}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '8px',
+              border: 'none',
+              background: scannerMode === 'hardware' ? 'var(--primary-color)' : 'var(--gray-200)',
+              color: scannerMode === 'hardware' ? 'white' : 'var(--gray-600)',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            Hardware Scanner
+          </button>
+          <button
+            onClick={() => setScannerMode('camera')}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '8px',
+              border: 'none',
+              background: scannerMode === 'camera' ? 'var(--primary-color)' : 'var(--gray-200)',
+              color: scannerMode === 'camera' ? 'white' : 'var(--gray-600)',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            Camera
+          </button>
+        </div>
+      </div>
 
       {/* Validation Loading Overlay */}
       {validationLoading && (
@@ -388,16 +509,367 @@ const Scan = ({ currentOfficer = null }) => {
       <div id="qr-reader" style={{ display: isScanning ? 'block' : 'none' }}></div>
       <div id="temp-qr-reader" style={{ display: 'none' }}></div>
 
-      {/* New Design: Split Layout */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: '70vh',
-        padding: '0 24px',
-        gap: '48px'
-      }}>
-        {!scanResult && !isScanning ? (
+      {/* Main Scanning Interface */}
+      {scannerMode === 'hardware' && !scanResult ? (
+        /* Hardware Scanner UI */
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '60vh',
+          padding: '24px'
+        }}>
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            borderRadius: '24px',
+            padding: '48px',
+            maxWidth: '500px',
+            width: '100%',
+            boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              background: isHardwareScannerReady ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #f59e0b, #d97706)',
+              borderRadius: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 24px auto',
+              color: 'white',
+              boxShadow: '0 8px 24px rgba(16, 185, 129, 0.3)'
+            }}>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+            </div>
+
+            <h3 style={{
+              fontSize: '28px',
+              fontWeight: '600',
+              color: 'var(--gray-900)',
+              marginBottom: '16px'
+            }}>
+              Hardware Scanner Ready
+            </h3>
+
+            <p style={{
+              fontSize: '16px',
+              color: 'var(--gray-600)',
+              marginBottom: '32px',
+              lineHeight: '1.6'
+            }}>
+              {isHardwareScannerReady 
+                ? "Scan any QR code with your hardware scanner. The system is ready to receive input."
+                : "Processing scanned QR code. Please wait..."
+              }
+            </p>
+
+            <input
+              ref={hardwareScannerInputRef}
+              type="text"
+              value={hardwareScannerInput}
+              onChange={handleHardwareScannerInput}
+              onKeyDown={handleHardwareScannerKeyDown}
+              placeholder="Hardware scanner input will appear here..."
+              disabled={!isHardwareScannerReady}
+              style={{
+                width: '100%',
+                padding: '16px',
+                fontSize: '16px',
+                borderRadius: '12px',
+                border: '2px solid var(--primary-color)',
+                background: isHardwareScannerReady ? 'white' : '#f3f4f6',
+                color: 'var(--gray-900)',
+                textAlign: 'center',
+                marginBottom: '24px',
+                outline: 'none'
+              }}
+            />
+
+            <div style={{
+              fontSize: '14px',
+              color: 'var(--gray-500)',
+              fontStyle: 'italic'
+            }}>
+              💡 Tip: Make sure your scanner is set to add "Enter" after each scan
+            </div>
+          </div>
+        </div>
+      ) : scannerMode === 'hardware' && scanResult ? (
+        /* Hardware Scanner Results Display */
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '70vh',
+          padding: '24px'
+        }}>
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            borderRadius: '24px',
+            padding: '40px',
+            maxWidth: '700px',
+            width: '100%',
+            boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
+            textAlign: 'center'
+          }}>
+            {/* Display scanned QR code */}
+            {qrImage && (
+              <div style={{ marginBottom: '32px' }}>
+                <img src={qrImage} alt="Scanned QR Code" style={{ 
+                  maxWidth: '180px', 
+                  height: 'auto', 
+                  borderRadius: '16px', 
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
+                  border: '4px solid white'
+                }} />
+                <div style={{
+                  fontSize: '14px',
+                  color: 'var(--gray-600)',
+                  marginTop: '8px',
+                  fontStyle: 'italic'
+                }}>
+                </div>
+              </div>
+            )}
+            
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '24px',
+              marginBottom: '32px',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1))',
+                border: '1px solid rgba(99, 102, 241, 0.2)',
+                borderRadius: '16px',
+                padding: '24px',
+                minWidth: '160px',
+                flex: '1',
+                maxWidth: '200px'
+              }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  background: 'linear-gradient(135deg, var(--primary-color), #8b5cf6)',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px auto',
+                  color: 'white'
+                }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--gray-900)', marginBottom: '4px' }}>
+                  {scanResult.data.visitorName}
+                </div>
+                <div style={{ fontSize: '14px', color: 'var(--gray-600)' }}>Visitor</div>
+            </div>
+            
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1))',
+                border: '1px solid rgba(16, 185, 129, 0.2)',
+                borderRadius: '16px',
+                padding: '24px',
+                minWidth: '160px',
+                flex: '1',
+                maxWidth: '200px'
+              }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px auto',
+                  color: 'white'
+                }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--gray-900)', marginBottom: '4px' }}>
+                  {scanResult.data.inmateName}
+                </div>
+                <div style={{ fontSize: '14px', color: 'var(--gray-600)' }}>Inmate</div>
+              </div>
+            </div>
+
+            <button 
+              className="modern-btn-secondary" 
+              onClick={toggleDetails}
+              style={{ marginBottom: '24px' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              {showDetails ? 'Hide details' : 'View details'}
+            </button>
+            
+            {showDetails && (
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.6)',
+                border: '1px solid rgba(255, 255, 255, 0.4)',
+                borderRadius: '16px',
+                padding: '24px',
+                marginBottom: '24px',
+                textAlign: 'left'
+              }}>
+                <div style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: 'var(--gray-900)',
+                  marginBottom: '16px',
+                  textAlign: 'center'
+                }}>
+                  Visit Details
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div className="modern-detail-item">
+                    <span className="modern-detail-label">Visitor Name:</span>
+                    <span className="modern-detail-value">{scanResult.data.visitorName}</span>
+                  </div>
+                  {scanResult.data.clientEmail && scanResult.data.clientEmail !== 'Unknown' && (
+                    <div className="modern-detail-item">
+                      <span className="modern-detail-label">Visitor Email:</span>
+                      <span className="modern-detail-value">{scanResult.data.clientEmail}</span>
+                    </div>
+                  )}
+                  <div className="modern-detail-item">
+                    <span className="modern-detail-label">Inmate Name:</span>
+                    <span className="modern-detail-value">{scanResult.data.inmateName}</span>
+                  </div>
+                  <div className="modern-detail-item">
+                    <span className="modern-detail-label">Visit Date/Time:</span>
+                    <span className="modern-detail-value">{scanResult.data.visitDate} {scanResult.data.time}</span>
+                  </div>
+                  
+                  {/* Show additional time info for time-related validation results */}
+                  {scanResult.validationDetails?.status === 'too_early' && scanResult.data.allowedTime && (
+                    <div className="modern-detail-item">
+                      <span className="modern-detail-label">Entry Allowed From:</span>
+                      <span className="modern-detail-value" style={{ color: '#f59e0b', fontWeight: '600' }}>
+                        {new Date(scanResult.data.allowedTime).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {scanResult.validationDetails?.status === 'expired' && scanResult.data.expirationTime && (
+                    <div className="modern-detail-item">
+                      <span className="modern-detail-label">Expired At:</span>
+                      <span className="modern-detail-value" style={{ color: '#ef4444', fontWeight: '600' }}>
+                        {new Date(scanResult.data.expirationTime).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {scanResult.isValid && (
+                    <div className="modern-detail-item">
+                      <span className="modern-detail-label">Current Time:</span>
+                      <span className="modern-detail-value" style={{ color: '#10b981', fontWeight: '600' }}>
+                        {new Date().toLocaleString()} ✓
+                      </span>
+                    </div>
+                  )}
+                  <div className="modern-detail-item">
+                    <span className="modern-detail-label">Purpose:</span>
+                    <span className="modern-detail-value">{scanResult.data.purpose}</span>
+                  </div>
+                  <div className="modern-detail-item">
+                    <span className="modern-detail-label">Relationship:</span>
+                    <span className="modern-detail-value">{scanResult.data.relationship}</span>
+                  </div>
+                  <div className="modern-detail-item">
+                    <span className="modern-detail-label">Visit ID:</span>
+                    <span className="modern-detail-value">{scanResult.data.visitId}</span>
+                  </div>
+                  <div className="modern-detail-item">
+                    <span className="modern-detail-label">Status:</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '50%',
+                        background: scanResult.statusColor,
+                        boxShadow: `0 0 0 3px ${scanResult.statusColor}20`
+                      }}></div>
+                      <span style={{ 
+                        color: scanResult.statusColor, 
+                        fontWeight: '600',
+                        fontSize: '16px'
+                      }}>
+                        {scanResult.status}
+                      </span>
+                    </div>
+                    {scanResult.statusReason && (
+                      <div style={{ 
+                        fontSize: '14px', 
+                        color: 'var(--gray-600)', 
+                        marginTop: '4px',
+                        fontStyle: 'italic' 
+                      }}>
+                        {scanResult.statusReason}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div style={{ 
+              display: 'flex', 
+              gap: '16px', 
+              justifyContent: 'center',
+              flexWrap: 'wrap'
+            }}>
+              <button className="modern-btn-primary" onClick={resetScan}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M1 1h6v6H1z"></path>
+                  <path d="M17 1h6v6h-6z"></path>
+                  <path d="M1 17h6v6H1z"></path>
+                  <path d="M17 17h6v6h-6z"></path>
+                </svg>
+                Scan New QR
+              </button>
+              <button className="modern-btn-secondary" onClick={resetScan}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : scannerMode === 'camera' ? (
+        /* Camera Scanner UI */
+        <>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          minHeight: '70vh',
+          padding: '0 24px',
+          gap: '48px'
+        }}>
+          {!scanResult && !isScanning ? (
           <>
             {/* Left Side - Visual QR Scanner */}
             <div style={{
@@ -980,6 +1452,8 @@ const Scan = ({ currentOfficer = null }) => {
           flex: 1;
         }
       `}</style>
+        </>
+        ) : null}
     </div>
   );
 };

@@ -543,9 +543,11 @@ const LogTrails = ({ officerFilter = null }) => {
                 </div>
               </div>
 
-              {/* Purpose of Visit - FIXED SECTION */}
+              {/* Purpose of Visit / Reason - Dynamic Label Based on Action */}
               <div style={{ marginBottom: '20px' }}>
-                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Purpose of Visit</div>
+                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                  {(selectedLog.action === 'scan_failed' || selectedLog.action === 'scan_error') ? 'Reason' : 'Purpose of Visit'}
+                </div>
                 <div style={{
                   background: '#f3f4f6',
                   padding: '12px',
