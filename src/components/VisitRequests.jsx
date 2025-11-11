@@ -286,13 +286,15 @@ const VisitRequests = ({ currentOfficer = null }) => {
       console.log('🔍 DEBUG: Current officer prop:', currentOfficer);
       console.log('🔍 DEBUG: Selected officer:', selectedOfficer);
 
-      // Add reason if provided
+      // Add reason if provided — store admin notes in specific fields and avoid overwriting the user's original 'reason'
       if (actionReason.trim()) {
-        updateData.reason = actionReason.trim();
         if (currentAction === 'reject') {
           updateData.rejectionReason = actionReason.trim();
         } else if (currentAction === 'reschedule') {
           updateData.rescheduleReason = actionReason.trim();
+        } else {
+          // For other actions (if any) store in generic reason
+          updateData.reason = actionReason.trim();
         }
       }
 
@@ -427,7 +429,7 @@ const VisitRequests = ({ currentOfficer = null }) => {
           inmateName: request.inmateName,
           visitDate: request.visitDate,
           visitTime: request.visitTime,
-          facility: 'Bureau of Corrections'
+          facility: 'Central Prison Camp Sablayan Penal Farm'
         },
         adminNotes: 'Please arrive 15 minutes early and bring valid ID. Show this QR code at the entrance.'
       };
@@ -1022,7 +1024,7 @@ const VisitRequests = ({ currentOfficer = null }) => {
                         fontSize: '13px',
                         color: '#6b7280'
                       }}>
-                        Bureau of Corrections Officer
+                        Central Prison Camp Sablayan Penal Farm Officer
                       </div>
                     </div>
                   </div>
@@ -1511,7 +1513,7 @@ const VisitRequests = ({ currentOfficer = null }) => {
                   <div className="modern-modal-grid modern-modal-grid-2" style={{ gap: '16px' }}>
                     <div className="modern-modal-info-card" style={{ padding: '20px' }}>
                       <div className="modern-modal-info-label">Visit Purpose</div>
-                      <div className="modern-modal-info-value" style={{ marginTop: '8px' }}>{selectedRequest.reason}</div>
+                      <div className="modern-modal-info-value" style={{ marginTop: '8px' }}>{selectedRequest.purpose || selectedRequest.reason || 'Not specified'}</div>
                     </div>
                     <div className="modern-modal-info-card" style={{ padding: '20px' }}>
                       <div className="modern-modal-info-label">Status</div>
@@ -1586,6 +1588,21 @@ const VisitRequests = ({ currentOfficer = null }) => {
                     {selectedRequest.visitTime}
                   </div>
                 </div>
+                {/* Reason card placed under Visit Schedule (hidden for approved requests) */}
+                {selectedRequest.status !== 'approved' && (
+                  <div className="modern-modal-info-card" style={{ padding: '24px', marginTop: '12px' }}>
+                    <div className="modern-modal-section-title" style={{ fontSize: '14px', marginBottom: '12px' }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14,2 14,8 20,8"></polyline>
+                      </svg>
+                      Reason
+                    </div>
+                    <div style={{ fontSize: '14px', color: 'var(--gray-600)' }}>
+                      {selectedRequest.rejectionReason || selectedRequest.rescheduleReason || selectedRequest.reason || selectedRequest.purpose || 'Not specified'}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

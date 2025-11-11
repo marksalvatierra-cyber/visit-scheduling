@@ -25,7 +25,7 @@ const AddAdmin = () => {
   const [listLoading, setListLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeDropdown, setActiveDropdown] = useState(null);
+  
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
@@ -33,6 +33,29 @@ const AddAdmin = () => {
   const [showLoginHistoryModal, setShowLoginHistoryModal] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [editFormData, setEditFormData] = useState({});
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [toast, setToast] = useState({ message: '', type: '', isVisible: false });
+
+  // Inline Toast component (simple)
+  const Toast = ({ message, type, isVisible, onClose }) => {
+    useEffect(() => {
+      if (isVisible) {
+        const t = setTimeout(() => onClose(), 3000);
+        return () => clearTimeout(t);
+      }
+    }, [isVisible, onClose]);
+
+    if (!isVisible) return null;
+
+    return (
+      <div style={{ position: 'fixed', right: 20, top: 20, zIndex: 2000 }}>
+        <div style={{ padding: '12px 16px', borderRadius: 8, background: type === 'success' ? '#dcfce7' : '#fee2e2', color: type === 'success' ? '#065f46' : '#7f1d1d', boxShadow: '0 6px 18px rgba(0,0,0,0.08)' }}>
+          <strong style={{ marginRight: 8 }}>{type === 'success' ? 'Success' : 'Notice'}</strong>
+          <span>{message}</span>
+        </div>
+      </div>
+    );
+  };
 
   useEffect(() => {
     loadAdmins();
@@ -189,7 +212,28 @@ const AddAdmin = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    const date = new Date(dateString);
+    // Handle Firebase timestamp objects ({ seconds }) and Date-like objects
+    let date;
+    try {
+      if (typeof dateString === 'object' && dateString !== null) {
+        if (typeof dateString.seconds === 'number') {
+          // Firestore timestamp
+          date = new Date(dateString.seconds * 1000);
+        } else if (typeof dateString.toDate === 'function') {
+          // Firebase Timestamp with toDate()
+          date = dateString.toDate();
+        } else {
+          date = new Date(dateString);
+        }
+      } else {
+        date = new Date(dateString);
+      }
+    } catch (e) {
+      return 'N/A';
+    }
+
+    if (isNaN(date.getTime())) return 'N/A';
+
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -206,9 +250,6 @@ const AddAdmin = () => {
   });
 
   // Action handlers
-  const handleDropdownToggle = (adminId) => {
-    setActiveDropdown(activeDropdown === adminId ? null : adminId);
-  };
 
   const handleEditAdmin = (admin) => {
     setSelectedAdmin(admin);
@@ -219,50 +260,80 @@ const AddAdmin = () => {
       email: admin.email || ''
     });
     setShowEditModal(true);
-    setActiveDropdown(null);
   };
 
   const handleResetPassword = (admin) => {
     setSelectedAdmin(admin);
     setShowResetPasswordModal(true);
-    setActiveDropdown(null);
   };
 
   const handleToggleStatus = async (admin) => {
     try {
-      // Toggle admin status logic here
       const newStatus = admin.status === 'active' ? 'inactive' : 'active';
-      // Update admin status in your backend
-      console.log(`Toggling admin ${admin.id} to ${newStatus}`);
-      await loadAdmins(); // Reload the list
+      // Update admin status in backend
+      const result = await firebaseService.updateUserProfile(admin.id, { status: newStatus });
+      if (result.success) {
+        // Update local state optimistically
+        setAdmins(prev => prev.map(a => a.id === admin.id ? { ...a, status: newStatus } : a));
+        // Update totalAdmins count if desired (only if status affects count)
+        setTotalAdmins(prev => {
+          if (admin.status === 'active' && newStatus !== 'active') return Math.max(0, prev - 1);
+          if (admin.status !== 'active' && newStatus === 'active') return prev + 1;
+          return prev;
+        });
+      } else {
+        throw new Error(result.error || 'Failed to update status');
+      }
     } catch (error) {
       console.error('Error toggling admin status:', error);
+      alert('Failed to update admin status: ' + (error.message || error));
     }
-    setActiveDropdown(null);
   };
 
   const handleDeleteAdmin = (admin) => {
     setSelectedAdmin(admin);
     setShowDeleteModal(true);
-    setActiveDropdown(null);
+  };
+
+  // Confirm and perform deletion of the selected admin
+  const confirmDeleteAdmin = async () => {
+    if (!selectedAdmin || !selectedAdmin.id) return;
+    try {
+      setIsDeleting(true);
+      // Call firebase service to delete the user document
+      const result = await firebaseService.deleteUserProfile(selectedAdmin.id);
+      if (result.success) {
+        // Remove from local list
+        setAdmins(prev => prev.filter(a => a.id !== selectedAdmin.id));
+        setTotalAdmins(prev => Math.max(0, prev - 1));
+        setShowDeleteModal(false);
+        setSelectedAdmin(null);
+        // Show success toast
+        setToast({ message: 'Officer removed successfully', type: 'success', isVisible: true });
+      } else {
+        throw new Error(result.error || 'Failed to delete user');
+      }
+    } catch (error) {
+      console.error('Error deleting admin:', error);
+      alert('Failed to delete admin: ' + (error.message || error));
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleViewActivity = (admin) => {
     setSelectedAdmin(admin);
     setShowActivityModal(true);
-    setActiveDropdown(null);
   };
 
   const handleSendEmail = (admin) => {
     // Open default email client
     window.location.href = `mailto:${admin.email}?subject=Admin Account - Visit Scheduling System`;
-    setActiveDropdown(null);
   };
 
   const handleViewLoginHistory = (admin) => {
     setSelectedAdmin(admin);
     setShowLoginHistoryModal(true);
-    setActiveDropdown(null);
   };
 
   const closeAllModals = () => {
@@ -541,6 +612,8 @@ const AddAdmin = () => {
           }
         `}
       </style>
+  {/* Toast */}
+  <Toast message={toast.message} type={toast.type} isVisible={toast.isVisible} onClose={() => setToast(prev => ({ ...prev, isVisible: false }))} />
       
       {/* Modern Header - Admin Management */}
       <div className="modern-records-header">
@@ -712,343 +785,142 @@ const AddAdmin = () => {
           </div>
         ) : (
           <div style={{ padding: '0' }}>
-            {filteredAdmins.map((admin, index) => (
-              <div key={admin.id || index} style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '20px 24px',
-                borderBottom: index < filteredAdmins.length - 1 ? '1px solid #f1f5f9' : 'none',
-                transition: 'background-color 0.2s ease'
-              }}
-              onMouseOver={(e) => e.target.style.backgroundColor = '#f8fafc'}
-              onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+            {filteredAdmins.map((admin, index) => {
+              const rowKey = admin.id || `idx-${index}`;
+              return (
+                <div
+                  key={rowKey}
+                  style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'white',
-                    fontSize: '18px',
-                    fontWeight: '600'
-                  }}>
-                    {admin.firstName ? admin.firstName.charAt(0).toUpperCase() : 'A'}
-                    {admin.lastName ? admin.lastName.charAt(0).toUpperCase() : 'D'}
-                  </div>
-                  <div>
-                    <div style={{
-                      fontSize: '16px',
-                      fontWeight: '600',
-                      color: '#1f2937',
-                      marginBottom: '4px'
-                    }}>
-                      {`${admin.firstName || 'Unknown'} ${admin.middleName ? admin.middleName + ' ' : ''}${admin.lastName || 'Admin'}`}
-                    </div>
-                    <div style={{
-                      fontSize: '14px',
-                      color: '#6b7280'
-                    }}>
-                      {admin.email || 'No email provided'}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '4px 12px',
-                    borderRadius: '20px',
-                    background: '#dcfce7',
-                    color: '#166534',
-                    fontSize: '12px',
-                    fontWeight: '500'
-                  }}>
-                    <div style={{
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      background: '#22c55e'
-                    }}></div>
-                    Active
-                  </div>
-                  <div style={{
-                    fontSize: '12px',
-                    color: '#6b7280'
-                  }}>
-                    Added {formatDate(admin.createdAt)}
-                  </div>
-                  <div style={{ position: 'relative' }}>
-                    <button 
-                      onClick={() => handleDropdownToggle(admin.id)}
+                    justifyContent: 'space-between',
+                    padding: '20px 24px',
+                    borderBottom: index < filteredAdmins.length - 1 ? '1px solid #f1f5f9' : 'none',
+                    transition: 'background-color 0.2s ease'
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#f8fafc')}
+                  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div
                       style={{
-                        padding: '6px',
-                        border: 'none',
-                        background: activeDropdown === admin.id ? '#f1f5f9' : 'none',
-                        cursor: 'pointer',
-                        borderRadius: '4px',
-                        color: activeDropdown === admin.id ? '#374151' : '#6b7280',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseOver={(e) => {
-                        if (activeDropdown !== admin.id) {
-                          e.target.style.backgroundColor = '#f1f5f9';
-                          e.target.style.color = '#374151';
-                        }
-                      }}
-                      onMouseOut={(e) => {
-                        if (activeDropdown !== admin.id) {
-                          e.target.style.backgroundColor = 'transparent';
-                          e.target.style.color = '#6b7280';
-                        }
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontSize: '18px',
+                        fontWeight: '600'
                       }}
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="1"></circle>
-                        <circle cx="19" cy="12" r="1"></circle>
-                        <circle cx="5" cy="12" r="1"></circle>
-                      </svg>
-                    </button>
-                    
-                    {/* Dropdown Menu */}
-                    {activeDropdown === admin.id && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '100%',
-                        right: '0',
-                        background: 'white',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
-                        border: '1px solid #e2e8f0',
-                        minWidth: '180px',
-                        zIndex: 1000,
-                        marginTop: '4px'
-                      }}>
-                        <div style={{ padding: '8px 0' }}>
-                          <button
-                            onClick={() => handleEditAdmin(admin)}
-                            style={{
-                              width: '100%',
-                              padding: '8px 16px',
-                              border: 'none',
-                              background: 'none',
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                              fontSize: '14px',
-                              color: '#374151',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              transition: 'background-color 0.2s ease'
-                            }}
-                            onMouseOver={(e) => e.target.style.backgroundColor = '#f8fafc'}
-                            onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M12 20h9"></path>
-                              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                            </svg>
-                            Edit Details
-                          </button>
-                          
-                          <button
-                            onClick={() => handleResetPassword(admin)}
-                            style={{
-                              width: '100%',
-                              padding: '8px 16px',
-                              border: 'none',
-                              background: 'none',
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                              fontSize: '14px',
-                              color: '#374151',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              transition: 'background-color 0.2s ease'
-                            }}
-                            onMouseOver={(e) => e.target.style.backgroundColor = '#f8fafc'}
-                            onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                              <circle cx="12" cy="16" r="1"></circle>
-                              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                            </svg>
-                            Reset Password
-                          </button>
-                          
-                          <button
-                            onClick={() => handleToggleStatus(admin)}
-                            style={{
-                              width: '100%',
-                              padding: '8px 16px',
-                              border: 'none',
-                              background: 'none',
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                              fontSize: '14px',
-                              color: admin.status === 'active' ? '#dc2626' : '#059669',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              transition: 'background-color 0.2s ease'
-                            }}
-                            onMouseOver={(e) => e.target.style.backgroundColor = '#f8fafc'}
-                            onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-                          >
-                            {admin.status === 'active' ? (
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <rect x="6" y="4" width="4" height="16"></rect>
-                                <rect x="14" y="4" width="4" height="16"></rect>
-                              </svg>
-                            ) : (
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <polygon points="5,3 19,12 5,21 5,3"></polygon>
-                              </svg>
-                            )}
-                            {admin.status === 'active' ? 'Deactivate' : 'Activate'}
-                          </button>
-                          
-                          <div style={{ height: '1px', background: '#e2e8f0', margin: '4px 0' }}></div>
-                          
-                          <button
-                            onClick={() => handleViewActivity(admin)}
-                            style={{
-                              width: '100%',
-                              padding: '8px 16px',
-                              border: 'none',
-                              background: 'none',
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                              fontSize: '14px',
-                              color: '#374151',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              transition: 'background-color 0.2s ease'
-                            }}
-                            onMouseOver={(e) => e.target.style.backgroundColor = '#f8fafc'}
-                            onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                              <polyline points="14,2 14,8 20,8"></polyline>
-                              <line x1="16" y1="13" x2="8" y2="13"></line>
-                              <line x1="16" y1="17" x2="8" y2="17"></line>
-                            </svg>
-                            View Activity Log
-                          </button>
-                          
-                          <button
-                            onClick={() => handleSendEmail(admin)}
-                            style={{
-                              width: '100%',
-                              padding: '8px 16px',
-                              border: 'none',
-                              background: 'none',
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                              fontSize: '14px',
-                              color: '#374151',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              transition: 'background-color 0.2s ease'
-                            }}
-                            onMouseOver={(e) => e.target.style.backgroundColor = '#f8fafc'}
-                            onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                              <polyline points="22,6 12,13 2,6"></polyline>
-                            </svg>
-                            Send Email
-                          </button>
-                          
-                          <button
-                            onClick={() => handleViewLoginHistory(admin)}
-                            style={{
-                              width: '100%',
-                              padding: '8px 16px',
-                              border: 'none',
-                              background: 'none',
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                              fontSize: '14px',
-                              color: '#374151',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              transition: 'background-color 0.2s ease'
-                            }}
-                            onMouseOver={(e) => e.target.style.backgroundColor = '#f8fafc'}
-                            onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <circle cx="12" cy="12" r="10"></circle>
-                              <polyline points="12,6 12,12 16,14"></polyline>
-                            </svg>
-                            View Login History
-                          </button>
-                          
-                          <div style={{ height: '1px', background: '#e2e8f0', margin: '4px 0' }}></div>
-                          
-                          <button
-                            onClick={() => handleDeleteAdmin(admin)}
-                            style={{
-                              width: '100%',
-                              padding: '8px 16px',
-                              border: 'none',
-                              background: 'none',
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                              fontSize: '14px',
-                              color: '#dc2626',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              transition: 'background-color 0.2s ease'
-                            }}
-                            onMouseOver={(e) => e.target.style.backgroundColor = '#fef2f2'}
-                            onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="3,6 5,6 21,6"></polyline>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            </svg>
-                            Delete Admin
-                          </button>
-                        </div>
+                      {admin.firstName ? admin.firstName.charAt(0).toUpperCase() : 'A'}
+                      {admin.lastName ? admin.lastName.charAt(0).toUpperCase() : 'D'}
+                    </div>
+                    <div>
+                      <div
+                        style={{
+                          fontSize: '16px',
+                          fontWeight: '600',
+                          color: '#1f2937',
+                          marginBottom: '4px'
+                        }}
+                      >
+                        {`${admin.firstName || 'Unknown'} ${admin.middleName ? admin.middleName + ' ' : ''}${admin.lastName || 'Admin'}`}
                       </div>
-                    )}
+                      <div style={{ fontSize: '14px', color: '#6b7280' }}>{admin.email || 'No email provided'}</div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    {/* Status pill reflects the admin.status field; treat undefined as active */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '4px 12px',
+                        borderRadius: '20px',
+                        background: (admin.status === 'active' || typeof admin.status === 'undefined') ? '#dcfce7' : '#fff1f2',
+                        color: (admin.status === 'active' || typeof admin.status === 'undefined') ? '#166534' : '#dc2626',
+                        fontSize: '12px',
+                        fontWeight: '500'
+                      }}
+                    >
+                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: (admin.status === 'active' || typeof admin.status === 'undefined') ? '#22c55e' : '#dc2626' }}></div>
+                      {(admin.status === 'active' || typeof admin.status === 'undefined') ? 'Active' : 'Inactive'}
+                    </div>
+
+                    <div style={{ fontSize: '12px', color: '#6b7280' }}>Added {formatDate(admin.createdAt)}</div>
+
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <button
+                        onClick={() => handleResetPassword(admin)}
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          border: '1px solid #e5e7eb',
+                          background: '#f8fafc',
+                          color: '#374151',
+                          cursor: 'pointer',
+                          fontSize: '13px'
+                        }}
+                      >
+                        Reset Password
+                      </button>
+
+                      <button
+                        onClick={() => handleToggleStatus(admin)}
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          border: '1px solid #e5e7eb',
+                          background: admin.status === 'active' ? '#fff1f2' : '#ecfeff',
+                          color: admin.status === 'active' ? '#dc2626' : '#059669',
+                          cursor: 'pointer',
+                          fontSize: '13px'
+                        }}
+                      >
+                        {admin.status === 'active' ? 'Deactivate' : 'Activate'}
+                      </button>
+
+                      {/* Delete icon after activate/deactivate */}
+                      <button
+                        onClick={() => handleDeleteAdmin(admin)}
+                        title="Remove Officer"
+                        aria-label={`Remove ${admin.firstName || ''} ${admin.lastName || ''}`}
+                        style={{
+                          padding: '8px',
+                          borderRadius: '8px',
+                          border: '1px solid #fde2e2',
+                          background: '#fff1f2',
+                          color: '#dc2626',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                          <path d="M10 11v6"></path>
+                          <path d="M14 11v6"></path>
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Click outside handler */}
-      {activeDropdown && (
-        <div 
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            zIndex: 999
-          }}
-          onClick={() => setActiveDropdown(null)}
-        />
-      )}
+      {/* (No dropdown overlay needed since actions are inline) */}
 
       {/* Edit Admin Modal */}
       {showEditModal && selectedAdmin && (
@@ -1180,7 +1052,14 @@ const AddAdmin = () => {
             </div>
             <div style={styles.modalFooter}>
               <button onClick={closeAllModals} style={{...styles.modalButton, ...styles.secondaryButton}}>Cancel</button>
-              <button style={{...styles.modalButton, background: '#dc2626', color: 'white'}}>Delete Officer</button>
+              <button onClick={confirmDeleteAdmin} disabled={isDeleting} style={{...styles.modalButton, background: '#dc2626', color: 'white', display: 'inline-flex', alignItems: 'center', gap: 8}}>
+                {isDeleting ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"></circle>
+                  </svg>
+                ) : null}
+                {isDeleting ? 'Deleting...' : 'Delete Officer'}
+              </button>
             </div>
           </div>
         </div>

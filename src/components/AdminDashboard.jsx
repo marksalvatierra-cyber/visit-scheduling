@@ -575,7 +575,7 @@ console.log('📊 Current chart data being rendered:', {
 
       // Create comprehensive report data
       const reportData = {
-        title: 'Bureau of Corrections - System Report',
+  title: 'Central Prison Camp Sablayan Penal Farm - System Report',
         generatedAt: new Date().toLocaleString(),
         period: `Last ${chartPeriod} days`,
         summary: {
@@ -627,7 +627,7 @@ console.log('📊 Current chart data being rendered:', {
 
   // Helper function to generate CSV content
   const generateCSVReport = (data) => {
-    let csv = 'Bureau of Corrections - System Report\n';
+  let csv = 'Central Prison Camp Sablayan Penal Farm - System Report\n';
     csv += `Generated: ${data.generatedAt}\n`;
     csv += `Period: ${data.period}\n\n`;
     
@@ -825,8 +825,8 @@ const markAllNotificationsRead = async () => {
             </svg>
           </button>
           <div className="header-title">
-            <h1>Admin Dashboard</h1>
-            <p>Bureau of Corrections Management System</p>
+            <h1>Superadmin Dashboard</h1>
+            <p>Central Prison Camp Sablayan Penal Farm Management System</p>
           </div>
         </div>
         
@@ -939,10 +939,10 @@ const markAllNotificationsRead = async () => {
       <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-header">
           <div className="logo-container">
-            <img src="/image/Logo.png" alt="Bureau of Corrections Logo" className="sidebar-logo" />
+            <img src="/image/12.png" alt="Central Prison Camp Sablayan Penal Farm Logo" className="sidebar-logo" />
             <div className="logo-text">
-              <h2 className="logo-title">Bureau of</h2>
-              <h2 className="logo-subtitle">Corrections</h2>
+              <h2 className="logo-title">Central Prison Camp</h2>
+              <h2 className="logo-subtitle">Sablayan</h2>
             </div>
           </div>
         </div>
@@ -1132,7 +1132,7 @@ const markAllNotificationsRead = async () => {
             <path d="M1 17h6v6H1z"></path>
             <path d="M17 17h6v6h-6z"></path>
           </svg>
-        Welcome back, Admin! 👋
+        Welcome back, Superadmin! 👋
         </div>
 
       

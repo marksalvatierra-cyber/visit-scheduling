@@ -199,7 +199,7 @@ const OfficerPersonalInfo = ({
         />
         <SimpleInfoItem
           label="Department"
-          value={profileData.department || 'Bureau of Corrections'}
+          value={profileData.department || 'Central Prison Camp Sablayan Penal Farm'}
           isReadOnly={true}
         />
         <SimpleInfoItem
@@ -257,7 +257,7 @@ const OfficerProfile = ({ onProfilePictureUpdate }) => {
     email: 'officer@bucor.gov.ph',
     phone: '+63 912 345 6789',
     role: 'Corrections Officer',
-    department: 'Bureau of Corrections',
+    department: 'Central Prison Camp Sablayan Penal Farm',
     badgeNumber: 'BUCOR-OFF-001',
     rank: 'Officer',
     shift: 'Morning Shift',
@@ -308,7 +308,7 @@ const OfficerProfile = ({ onProfilePictureUpdate }) => {
                 avatar: userData.profilePicture || prev.avatar,
                 // Officer-specific fields
                 role: userData.role || 'Corrections Officer',
-                department: userData.department || 'Bureau of Corrections',
+                department: userData.department || 'Central Prison Camp Sablayan Penal Farm',
                 badgeNumber: userData.badgeNumber || userData.employeeId || prev.badgeNumber,
                 rank: userData.rank || 'Officer',
                 shift: userData.shift || prev.shift,

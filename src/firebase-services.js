@@ -334,11 +334,13 @@ async sendPasswordReset(email) {
                 if (data.reason) {
                     logData.actionReason = data.reason;
                 }
-                if (newStatus === 'rejected' && data.reason) {
-                    logData.rejectionReason = data.reason;
+                if (data.rejectionReason) {
+                    logData.rejectionReason = data.rejectionReason;
+                    logData.actionReason = data.rejectionReason;
                 }
-                if (newStatus === 'rescheduled' && data.reason) {
-                    logData.rescheduleReason = data.reason;
+                if (data.rescheduleReason) {
+                    logData.rescheduleReason = data.rescheduleReason;
+                    logData.actionReason = data.rescheduleReason;
                 }
                 
                 console.log('Final log data being created:', logData);
@@ -592,6 +594,16 @@ async sendPasswordReset(email) {
     async deleteInmate(inmateId) {
         try {
             await this.db.collection('inmates').doc(inmateId).delete();
+            return { success: true };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Delete a user profile (Firestore document). Note: this does NOT delete the Firebase Auth account.
+    async deleteUserProfile(userId) {
+        try {
+            await this.db.collection('users').doc(userId).delete();
             return { success: true };
         } catch (error) {
             return { success: false, error: error.message };
@@ -925,7 +937,7 @@ async sendPasswordReset(email) {
                 approvedAt: visitData.approvedAt,
                 expiresAt: visitData.expiresAt,
                 status: 'approved',
-                facility: 'Bureau of Corrections',
+                    facility: 'Central Prison Camp Sablayan Penal Farm',
                 qrVersion: '1.0'
             };
             

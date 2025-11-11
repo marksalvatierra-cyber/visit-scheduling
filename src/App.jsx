@@ -29,14 +29,14 @@ function App() {
                 <div className="header-branding">
                   <div className="main-branding">
                     <div className="logo">
-                      <img src="/image/Logo.png" alt="Bureau of Corrections Logo" className="logo-image" />
+                      <img src="/image/12.png" alt="Central Prison Camp Sablayan Penal Farm Logo" className="logo-image" />
                     </div>
                     <div className="header-text">
                       <div className="republic-text">
                         <div className="republic">Republic of the Philippines</div>
                         <div className="republic-underline"></div>
                       </div>
-                      <div className="bureau">Bureau of Corrections</div>
+                      <div className="bureau">Central Prison Camp Sablayan Penal Farm</div>
                       <div className="tagline">"Bagong Pilipinas Bagong Pag-asa"</div>
                     </div>
                   </div>
@@ -82,7 +82,7 @@ function App() {
                   <h2>Featured Story</h2>
                   <div className="story-card">
                     <div className="story-thumb">
-                      <img src="/image/Logo.png" alt="Story Thumbnail" className="story-thumb-image" />
+                      <img src="/image/12.png" alt="Story Thumbnail" className="story-thumb-image" />
                     </div>
                     <div className="story-content">
                       <div className="story-title">IPPF CONTINUOUSLY IMPLEMENTS REFORMATION PROGRAMS THROUGH AGRICULTURAL ACTIVITIES</div>
@@ -96,7 +96,7 @@ function App() {
                     </div>
                     <div className="story-content">
                       <div className="story-title">BUCOR, PHILIPPINE PLAYHOUSE, INC. FORGE PARTNERSHIP TO ENHANCE CIW ANG TEATRO PROGRAM</div>
-                      <div className="story-desc">The Bureau of Corrections (BuCor) and Philippine Playhouse, Inc. officially signed a Memorandum of Agreement (MOA) to strengthen the implementation...</div>
+                      <div className="story-desc">The Central Prison Camp Sablayan Penal Farm (BuCor) and Philippine Playhouse, Inc. officially signed a Memorandum of Agreement (MOA) to strengthen the implementation...</div>
                       <div className="story-date">22 February 2025</div>
                     </div>
                   </div>
@@ -125,7 +125,7 @@ function App() {
                   </div>
                   <div className="map-divider"></div>
                   <div className="map-contact">
-                    <div className="contact-org">Bureau of Corrections</div>
+                    <div className="contact-org">Central Prison Camp Sablayan Penal Farm</div>
                     <div className="contact-address">Sablayan Prison and Penal Farm, Philippines</div>
                     <div className="contact-divider"></div>
                     <div className="contact-row">
@@ -146,7 +146,7 @@ function App() {
             {/* Footer */}
             <footer className="main-footer">
               <div className="footer-content">
-                <span>&copy; 2025 Bureau of Corrections. All rights reserved.</span>
+                <span>&copy; 2025 Central Prison Camp Sablayan Penal Farm. All rights reserved.</span>
                 <span className="footer-divider">|</span>
                 <span>Sablayan Prison and Penal Farm, Philippines</span>
                 <a href="mailto:info@bucor.gov.ph" className="footer-icon" aria-label="Email">✉️</a>

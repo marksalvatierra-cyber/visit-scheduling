@@ -278,9 +278,9 @@ const ClientDashboard = () => {
               <polyline points="15,18 9,12 15,6"></polyline>
             </svg>
           </button>
-          <div className="header-title">
+            <div className="header-title">
             <h1>Client Dashboard</h1>
-            <p>Bureau of Corrections Visit System</p>
+            <p>Central Prison Camp Sablayan Penal Farm Visit System</p>
           </div>
         </div>
         <div className="header-right">
@@ -387,10 +387,10 @@ const ClientDashboard = () => {
       <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-header">
           <div className="logo-container">
-            <img src="/image/Logo.png" alt="Bureau of Corrections Logo" className="sidebar-logo" />
+            <img src="/image/12.png" alt="Central Prison Camp Sablayan Penal Farm Logo" className="sidebar-logo" />
             <div className="logo-text">
-              <h2 className="logo-title">Bureau of</h2>
-              <h2 className="logo-subtitle">Corrections</h2>
+              <h2 className="logo-title">Central Prison Camp</h2>
+              <h2 className="logo-subtitle">Sablayan</h2>
             </div>
           </div>
         </div>

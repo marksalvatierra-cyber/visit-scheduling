@@ -239,7 +239,7 @@ const AdminProfile = ({ onProfilePictureUpdate }) => {
     email: 'admin@bucor.gov.ph',
     phone: '+63 912 345 6789',
     role: 'System Administrator',
-    department: 'Bureau of Corrections',
+    department: 'Central Prison Camp Sablayan Penal Farm',
     employeeId: 'BUCOR-2024-001',
     joinDate: 'January 15, 2024',
     lastLogin: 'Today at 9:30 AM',

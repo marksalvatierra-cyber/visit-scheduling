@@ -255,9 +255,9 @@ const OfficerDashboard = () => {
               <polyline points="15,18 9,12 15,6"></polyline>
             </svg>
           </button>
-          <div className="header-title">
-            <h1>Officer Dashboard</h1>
-            <p>Bureau of Corrections Officer Portal</p>
+            <div className="header-title">
+            <h1>Admin Dashboard</h1>
+            <p>Central Prison Camp Sablayan Penal Farm Admin Portal</p>
           </div>
         </div>
         
@@ -342,10 +342,10 @@ const OfficerDashboard = () => {
       <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-header">
           <div className="logo-container">
-            <img src="/image/Logo.png" alt="Bureau of Corrections Logo" className="sidebar-logo" />
+            <img src="/image/12.png" alt="Central Prison Camp Sablayan Penal Farm Logo" className="sidebar-logo" />
             <div className="logo-text">
-              <h2 className="logo-title">Bureau of</h2>
-              <h2 className="logo-subtitle">Corrections</h2>
+              <h2 className="logo-title">Central Prison Camp</h2>
+              <h2 className="logo-subtitle">Sablayan</h2>
             </div>
           </div>
         </div>
@@ -458,7 +458,7 @@ const OfficerDashboard = () => {
                     <path d="M1 17h6v6H1z"></path>
                     <path d="M17 17h6v6h-6z"></path>
                   </svg>
-                  Welcome back, Officer! 👮‍♂️
+                  Welcome back, Admin! 👮‍♂️
                 </div>
                 <button 
                   onClick={refreshDashboardStats}

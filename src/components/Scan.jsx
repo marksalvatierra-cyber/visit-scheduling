@@ -170,7 +170,7 @@ const Scan = ({ currentOfficer = null }) => {
             visitId: qrData.visitId,
             purpose: qrData.purpose || qrData.reason || 'Visit Entry',
             relationship: qrData.relationship || 'Verified Visitor',
-            facility: qrData.facility || 'Bureau of Corrections',
+            facility: qrData.facility || 'Central Prison Camp Sablayan Penal Farm',
             approvedAt: qrData.approvedAt,
             expiresAt: qrData.expiresAt,
             clientEmail: qrData.clientEmail

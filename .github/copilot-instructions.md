@@ -1,9 +1,9 @@
-# Copilot Instructions for Bureau of Corrections Visit Scheduling System
+# Copilot Instructions for Central Prison Camp Sablayan Penal Farm Visit Scheduling System
 
 ## Project Overview
 
 - **Stack:** React (SPA) + Vite + Firebase (Firestore, Auth, Storage) + TailwindCSS
-- **Purpose:** Manages inmate visit requests, admin dashboards, notifications, QR code validation, and log trails for the Bureau of Corrections.
+- **Purpose:** Manages inmate visit requests, admin dashboards, notifications, QR code validation, and log trails for the Central Prison Camp Sablayan Penal Farm.
 - **Major Components:**
   - `src/components/`: Modular React components for admin/client dashboards, visit requests, scanning, records, logs, settings, notifications, and profile management.
   - `src/firebase-services.js`: Centralized service for all Firestore, Auth, and Storage operations. All data flows and business logic are routed through this class.

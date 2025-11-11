@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './LoginModal.css';
 import firebaseService from './firebase-services';
 import { firebaseConfig } from './firebase-config';
+import TermsModal from './components/TermsModal';
 
 const LoginModal = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
@@ -31,6 +32,10 @@ const LoginModal = ({ isOpen, onClose }) => {
   const [filePreview, setFilePreview] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  
+  // Terms and Conditions modal state
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [pendingUserData, setPendingUserData] = useState(null);
   
   // Multi-step form configuration
   const totalSteps = 4;
@@ -263,19 +268,25 @@ const LoginModal = ({ isOpen, onClose }) => {
       if (result.success) {
         setSuccess('Login successful! Redirecting...');
         const userData = await firebaseService.getUserData(result.user.uid);
+
+        // If a status field exists and is not 'active', prevent login
+        if (userData && typeof userData.status !== 'undefined' && userData.status !== 'active') {
+          // Ensure the auth session is cleared
+          await firebaseService.signOut();
+          setError('Your account has been deactivated. Please contact an administrator.');
+          setSuccess('');
+          return;
+        }
+
         setTimeout(() => {
           // Check both 'role' and 'userType' fields for compatibility
           const userRole = userData?.role || userData?.userType;
           
-          if (userData && userRole === 'admin') {
-            onClose();
-            navigate('/admin/dashboard');
-          } else if (userData && userRole === 'officer') {
-            onClose();
-            navigate('/officer/dashboard');
-          } else if (userData && userRole === 'client') {
-            onClose();
-            navigate('/client/dashboard');
+          if (userData && (userRole === 'admin' || userRole === 'officer' || userRole === 'client')) {
+            // Store user data and show terms modal instead of navigating directly
+            setPendingUserData({ userData, userRole });
+            setShowTermsModal(true);
+            setSuccess(''); // Clear the success message
           } else {
             setError('User type not recognized.');
           }
@@ -437,7 +448,38 @@ const LoginModal = ({ isOpen, onClose }) => {
     setFilePreview(null);
     setError('');
     setSuccess('');
+    setShowTermsModal(false);
+    setPendingUserData(null);
     onClose();
+  };
+
+  // Terms and Conditions modal handlers
+  const handleTermsAccept = () => {
+    if (pendingUserData) {
+      const { userData, userRole } = pendingUserData;
+      
+      // Navigate to appropriate dashboard based on user role
+      if (userRole === 'admin') {
+        navigate('/admin/dashboard');
+      } else if (userRole === 'officer') {
+        navigate('/officer/dashboard');
+      } else if (userRole === 'client') {
+        navigate('/client/dashboard');
+      }
+      
+      // Close both modals
+      setShowTermsModal(false);
+      setPendingUserData(null);
+      onClose();
+    }
+  };
+
+  const handleTermsClose = () => {
+    // User declined terms, sign them out and close terms modal
+    firebaseService.signOut();
+    setShowTermsModal(false);
+    setPendingUserData(null);
+    setError('You must accept the Terms and Conditions to proceed.');
   };
 
   if (!isOpen) return null;
@@ -843,6 +885,13 @@ const LoginModal = ({ isOpen, onClose }) => {
           </div>
         </div>
       </div>
+      
+      {/* Terms and Conditions Modal */}
+      <TermsModal 
+        isOpen={showTermsModal}
+        onAccept={handleTermsAccept}
+        onClose={handleTermsClose}
+      />
     </div>
   );
 };

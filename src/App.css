@@ -23,7 +23,7 @@
   padding: 2rem 1.5rem;
   margin: 0 auto;
 }
-/* Bureau of Corrections Landing Page Styles - Modern Enhanced Version */
+/* Central Prison Camp Sablayan Penal Farm Landing Page Styles - Modern Enhanced Version */
 
 /* Reset and base styles */
 * {
@@ -99,11 +99,10 @@ body {
 }
 
 .logo-image {
-  width: 90px;
-  height: 90px;
+  height: 120px;
+  width: auto;
   object-fit: contain;
-  border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: white;
   transition: transform 0.3s ease;
 }
 

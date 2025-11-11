@@ -203,6 +203,26 @@ const LogTrails = ({ officerFilter = null }) => {
     return log.purpose || log.reason || log.visitPurpose || 'Purpose not specified';
   };
 
+  // Helper to choose whether to display the original purpose (for accepted requests)
+  // or the reason (for non-accepted requests). This enforces the UI rule:
+  // - If action === 'approved' -> show Purpose of Visit
+  // - Otherwise -> show Reason
+  const getDisplayedPurposeOrReason = (log) => {
+    if (!log) return '';
+    if (log.action === 'approved') {
+      return log.purpose || log.visitPurpose || 'Purpose not specified';
+    }
+    // For non-approved actions prefer more specific reason fields if available
+    if (log.action === 'rejected') {
+      return log.rejectionReason || log.actionReason || log.reason || 'Reason not specified';
+    }
+    if (log.action === 'rescheduled' || log.action === 'reschedule') {
+      return log.rescheduleReason || log.actionReason || log.reason || 'Reason not specified';
+    }
+    // Generic fallback for other actions (scan failures, denials, etc.)
+    return log.actionReason || log.reason || log.purpose || 'Reason not specified';
+  };
+
   return (
     <div className="records-page">
       {/* Modern Header - Matching Records Design */}
@@ -546,7 +566,7 @@ const LogTrails = ({ officerFilter = null }) => {
               {/* Purpose of Visit / Reason - Dynamic Label Based on Action */}
               <div style={{ marginBottom: '20px' }}>
                 <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
-                  {(selectedLog.action === 'scan_failed' || selectedLog.action === 'scan_error') ? 'Reason' : 'Purpose of Visit'}
+                  {selectedLog.action === 'approved' ? 'Purpose of Visit' : 'Reason'}
                 </div>
                 <div style={{
                   background: '#f3f4f6',
@@ -556,12 +576,12 @@ const LogTrails = ({ officerFilter = null }) => {
                 }}>
                   <div style={{ 
                     fontSize: '14px', 
-                    color: getVisitPurpose(selectedLog) !== 'Purpose not specified' ? '#374151' : '#9ca3af',
+                    color: getDisplayedPurposeOrReason(selectedLog) && getDisplayedPurposeOrReason(selectedLog).indexOf('not specified') === -1 ? '#374151' : '#9ca3af',
                     lineHeight: '1.4',
                     fontWeight: '500',
-                    fontStyle: getVisitPurpose(selectedLog) !== 'Purpose not specified' ? 'normal' : 'italic'
+                    fontStyle: getDisplayedPurposeOrReason(selectedLog) && getDisplayedPurposeOrReason(selectedLog).indexOf('not specified') === -1 ? 'normal' : 'italic'
                   }}>
-                    {getVisitPurpose(selectedLog)}
+                    {getDisplayedPurposeOrReason(selectedLog)}
                   </div>
                 </div>
               </div>

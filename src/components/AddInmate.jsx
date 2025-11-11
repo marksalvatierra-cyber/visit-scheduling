@@ -59,16 +59,33 @@ const AddInmate = () => {
         counts.push(0);
       }
       
-      // Count inmates by month
+      // Count inmates by month (handle Firestore Timestamps and Date strings)
       inmates.forEach(inmate => {
-        if (inmate.createdAt) {
-          const inmateDate = new Date(inmate.createdAt);
-          const monthDiff = currentDate.getMonth() - inmateDate.getMonth() + 
-                           (currentDate.getFullYear() - inmateDate.getFullYear()) * 12;
-          
-          if (monthDiff >= 0 && monthDiff < 6) {
-            counts[5 - monthDiff]++;
+        if (!inmate.createdAt) return;
+
+        let inmateDate;
+        try {
+          // Firestore Timestamp with toDate()
+          if (inmate.createdAt && typeof inmate.createdAt.toDate === 'function') {
+            inmateDate = inmate.createdAt.toDate();
+          } else if (inmate.createdAt && typeof inmate.createdAt.seconds === 'number') {
+            // Plain object with seconds
+            inmateDate = new Date(inmate.createdAt.seconds * 1000);
+          } else {
+            // Fallback: try to construct Date from string or number
+            inmateDate = new Date(inmate.createdAt);
           }
+        } catch (e) {
+          return;
+        }
+
+        if (!inmateDate || isNaN(inmateDate.getTime())) return;
+
+        const monthDiff = currentDate.getMonth() - inmateDate.getMonth() +
+                         (currentDate.getFullYear() - inmateDate.getFullYear()) * 12;
+
+        if (monthDiff >= 0 && monthDiff < 6) {
+          counts[5 - monthDiff]++;
         }
       });
       
