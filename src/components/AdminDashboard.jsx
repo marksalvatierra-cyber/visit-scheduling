@@ -12,6 +12,7 @@ import LogTrails from './LogTrails';
 import Settings from './AdminSettings';
 import Profile from './AdminProfile.jsx';
 import AddAdmin from './AddAdmin.jsx';
+import VerifyUsers from './VerifyUsers.jsx';
 import './AdminDashboard.css';
 
 
@@ -710,6 +711,7 @@ console.log('📊 Current chart data being rendered:', {
       'scan': 'Scan',
       'addadmin': 'Manage Officers',
       'inmate': 'Add Inmate',
+      'verify': 'Verify Users',
       'records': 'Records',
       'log': 'Log Trails',
       'settings': 'Settings'
@@ -724,9 +726,10 @@ console.log('📊 Current chart data being rendered:', {
       'scan': '240px',
       'addadmin': '300px',
       'inmate': '380px',
-      'records': '440px',
-      'log': '500px',
-      'settings': '560px'
+      'verify': '440px',
+      'records': '500px',
+      'log': '560px',
+      'settings': '620px'
     };
     return positionMap[tooltipId] || '0px';
   };
@@ -1056,6 +1059,22 @@ const markAllNotificationsRead = async () => {
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                   </svg>
                   <span className="nav-text">Add Inmate</span>
+                </button>
+              </li>
+              <li className={`nav-item ${getCurrentPage() === 'verify' ? 'active' : ''}`}>
+                <button 
+                  className="nav-link"
+                  onClick={() => handleNavigation('verify')}
+                  title="Verify Users"
+                  data-tooltip="Verify Users"
+                  onMouseEnter={() => handleTooltipShow('verify')}
+                  onMouseLeave={handleTooltipHide}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                  <span className="nav-text">Verify Users</span>
                 </button>
               </li>
               <li className={`nav-item ${getCurrentPage() === 'records' ? 'active' : ''}`}>
@@ -1539,6 +1558,8 @@ const markAllNotificationsRead = async () => {
           <Route path="/scan" element={<Scan currentOfficer={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : 'Admin User')} />} />
           
           <Route path="/inmate" element={<AddInmate />} />
+          
+          <Route path="/verify" element={<VerifyUsers />} />
           
           <Route path="/records" element={<Records />} />
           

@@ -224,18 +224,21 @@ const LoginModal = ({ isOpen, onClose }) => {
         return;
       }
       
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('File size must be less than 5MB');
+      // Validate file size (max 2MB to account for Base64 encoding overhead)
+      if (file.size > 2 * 1024 * 1024) {
+        setError('File size must be less than 2MB');
         return;
       }
       
       setUploadedFile(file);
       
-      // Create preview
+      // Create preview and store Base64 data
       const reader = new FileReader();
       reader.onload = (e) => {
-        setFilePreview(e.target.result);
+        const base64Data = e.target.result;
+        setFilePreview(base64Data);
+        // Store the Base64 data in the file object for later use
+        file.base64Data = base64Data;
       };
       reader.readAsDataURL(file);
       setError('');
@@ -320,19 +323,28 @@ const LoginModal = ({ isOpen, onClose }) => {
           status: 'active' // Set account status to active
         };
         
+        // Get Base64 data from file preview (already converted)
+        const idFileData = uploadedFile ? {
+          base64: filePreview,
+          fileName: uploadedFile.name,
+          fileType: uploadedFile.type,
+          fileSize: uploadedFile.size
+        } : null;
+        
         // Create user account with Firebase Authentication and save data
         const result = await firebaseService.signUp(
           formData.register.email, 
           formData.register.password,
           userData,
-          uploadedFile
+          idFileData
         );
         
         if (result.success) {
           // After successful registration, sign out the user and redirect to login
           await firebaseService.signOut();
           
-          setSuccess('Registration successful! Please login with your credentials.');
+          // Show success alert
+          alert('🎉 Account created successfully!\n\nYou can now login with your credentials.');
           
           // Clear registration form and switch to login view
           setFormData(prev => ({
@@ -357,11 +369,9 @@ const LoginModal = ({ isOpen, onClose }) => {
           setUploadedFile(null);
           setFilePreview(null);
           
-          // Switch to login view after a short delay
-          setTimeout(() => {
-            setCurrentView('login');
-            setSuccess(''); // Clear success message when switching views
-          }, 2000);
+          // Reset to step 1 and switch to login view
+          setRegistrationStep(1);
+          setCurrentView('login');
           
         } else {
           setError(result.error || 'Registration failed.');
@@ -757,7 +767,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                 
                 <div className="info-message">
                   <span className="info-icon">ℹ️</span>
-                  <p>Your ID will be verified by our team. Accepted formats: JPG, PNG (max 5MB)</p>
+                  <p>Your ID will be verified by our team. Accepted formats: JPG, PNG (max 2MB)</p>
                 </div>
               </div>
             )}

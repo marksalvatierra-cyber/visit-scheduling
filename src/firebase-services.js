@@ -42,44 +42,34 @@ class FirebaseService {
         }
     }
 
-    async signUp(email, password, userData, idFile = null) {
+    async signUp(email, password, userData, idFileData = null) {
         try {
             // Create user account first
             const userCredential = await this.auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
             
-            let idFileUrl = null;
-            
-            // Save initial user data to Firestore (without ID file URL)
-            await this.db.collection('users').doc(user.uid).set({
+            // Prepare user document with Base64 ID data (if provided)
+            const userDoc = {
                 ...userData,
                 uid: user.uid, // Explicitly set the user ID
                 email: user.email,
                 userType: userData.role || 'client', // Set userType field for login compatibility
-                idFileUrl: null, // Will be updated after file upload
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            };
             
-            // Upload ID file if provided (now the user is authenticated)
-            if (idFile) {
-                try {
-                    const uploadResult = await this.uploadFile(idFile, `users/${user.uid}/identity`);
-                    if (uploadResult.success) {
-                        idFileUrl = uploadResult.downloadURL;
-                        // Update user document with ID file URL
-                        await this.db.collection('users').doc(user.uid).update({
-                            idFileUrl: idFileUrl,
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                    } else {
-                        console.error('Failed to upload ID file:', uploadResult.error);
-                        // Continue registration even if file upload fails
-                    }
-                } catch (uploadError) {
-                    console.error('Error uploading ID file:', uploadError);
-                    // Continue registration even if file upload fails
-                }
+            // Add ID file data if provided (stored as Base64 in Firestore)
+            if (idFileData) {
+                userDoc.idFile = {
+                    base64: idFileData.base64,
+                    fileName: idFileData.fileName,
+                    fileType: idFileData.fileType,
+                    fileSize: idFileData.fileSize,
+                    uploadedAt: new Date().toISOString()
+                };
             }
+            
+            // Save user data to Firestore
+            await this.db.collection('users').doc(user.uid).set(userDoc);
             
             this.currentUser = user;
             return { success: true, user: this.currentUser };
