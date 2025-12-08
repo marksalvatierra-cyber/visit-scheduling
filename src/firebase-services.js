@@ -35,7 +35,32 @@ class FirebaseService {
     async signIn(email, password) {
         try {
             const userCredential = await this.auth.signInWithEmailAndPassword(email, password);
-            this.currentUser = userCredential.user;
+            const user = userCredential.user;
+            
+            // Check if email is verified for client users
+            const userData = await this.getUserData(user.uid);
+            const userRole = userData?.role || userData?.userType;
+            
+            // Only require email verification for clients (not admins/officers)
+            if (userRole === 'client' && !user.emailVerified) {
+                // Sign out the user
+                await this.auth.signOut();
+                return { 
+                    success: false, 
+                    error: 'Please verify your email before logging in. Check your inbox for the verification link.',
+                    emailNotVerified: true
+                };
+            }
+            
+            // Update emailVerified status in Firestore if it changed
+            if (user.emailVerified && userData && !userData.emailVerified) {
+                await this.db.collection('users').doc(user.uid).update({
+                    emailVerified: true,
+                    emailVerifiedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+            
+            this.currentUser = user;
             return { success: true, user: this.currentUser };
         } catch (error) {
             return { success: false, error: error.message };
@@ -48,11 +73,23 @@ class FirebaseService {
             const userCredential = await this.auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
             
+            // Send email verification
+            try {
+                await user.sendEmailVerification({
+                    url: window.location.origin + '/login',
+                    handleCodeInApp: false
+                });
+            } catch (emailError) {
+                console.error('Error sending verification email:', emailError);
+                // Continue with registration even if email fails
+            }
+            
             // Prepare user document with Base64 ID data (if provided)
             const userDoc = {
                 ...userData,
                 uid: user.uid, // Explicitly set the user ID
                 email: user.email,
+                emailVerified: false, // Track email verification status
                 userType: userData.role || 'client', // Set userType field for login compatibility
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
@@ -72,7 +109,7 @@ class FirebaseService {
             await this.db.collection('users').doc(user.uid).set(userDoc);
             
             this.currentUser = user;
-            return { success: true, user: this.currentUser };
+            return { success: true, user: this.currentUser, emailSent: true };
         } catch (error) {
             return { success: false, error: error.message };
         }
@@ -115,6 +152,46 @@ async sendPasswordReset(email) {
         return { success: false, error: error.message };
     }
 }
+
+    // Resend email verification
+    async resendVerificationEmail() {
+        try {
+            const user = this.auth.currentUser;
+            if (!user) {
+                return { success: false, error: 'No user is currently signed in.' };
+            }
+            
+            if (user.emailVerified) {
+                return { success: false, error: 'Email is already verified.' };
+            }
+            
+            await user.sendEmailVerification({
+                url: window.location.origin + '/login',
+                handleCodeInApp: false
+            });
+            
+            return { success: true };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+    
+    // Check if current user's email is verified
+    async checkEmailVerified() {
+        try {
+            const user = this.auth.currentUser;
+            if (!user) {
+                return { success: false, error: 'No user is currently signed in.' };
+            }
+            
+            // Reload user to get latest emailVerified status
+            await user.reload();
+            
+            return { success: true, emailVerified: user.emailVerified };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
 
     async signOut() {
         try {

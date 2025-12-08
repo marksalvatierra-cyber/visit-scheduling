@@ -295,7 +295,42 @@ const LoginModal = ({ isOpen, onClose }) => {
           }
         }, 1000);
       } else {
-        if (result.error && result.error.toLowerCase().includes('auth/invalid-credential')) {
+        if (result.emailNotVerified) {
+          // Email not verified - show option to resend
+          setError(
+            <div style={{ textAlign: 'left' }}>
+              <div>{result.error}</div>
+              <button 
+                onClick={async () => {
+                  // Temporarily sign in to resend verification
+                  const tempResult = await firebaseService.signIn(formData.login.email, formData.login.password);
+                  if (tempResult.success || tempResult.emailNotVerified) {
+                    const resendResult = await firebaseService.resendVerificationEmail();
+                    await firebaseService.signOut();
+                    if (resendResult.success) {
+                      setError('');
+                      setSuccess('Verification email sent! Please check your inbox.');
+                    } else {
+                      setError('Failed to resend verification email. Please try again later.');
+                    }
+                  }
+                }}
+                style={{
+                  marginTop: '8px',
+                  padding: '6px 12px',
+                  background: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '13px'
+                }}
+              >
+                Resend Verification Email
+              </button>
+            </div>
+          );
+        } else if (result.error && result.error.toLowerCase().includes('auth/invalid-credential')) {
           setError('Incorrect email or password. Please try again.');
         } else {
           setError(result.error || 'Login failed.');
@@ -343,8 +378,8 @@ const LoginModal = ({ isOpen, onClose }) => {
           // After successful registration, sign out the user and redirect to login
           await firebaseService.signOut();
           
-          // Show success alert
-          alert('🎉 Account created successfully!\n\nYou can now login with your credentials.');
+          // Show success alert with email verification instructions
+          alert('🎉 Account created successfully!\n\n📧 A verification email has been sent to ' + formData.register.email + '.\n\nPlease check your inbox and verify your email before logging in.');
           
           // Clear registration form and switch to login view
           setFormData(prev => ({
