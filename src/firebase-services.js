@@ -44,17 +44,33 @@ class FirebaseService {
 
     async signUp(email, password, userData, idFile = null) {
         try {
+            // Create user account first
             const userCredential = await this.auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
             
             let idFileUrl = null;
             
-            // Upload ID file if provided
+            // Save initial user data to Firestore (without ID file URL)
+            await this.db.collection('users').doc(user.uid).set({
+                ...userData,
+                uid: user.uid, // Explicitly set the user ID
+                email: user.email,
+                userType: userData.role || 'client', // Set userType field for login compatibility
+                idFileUrl: null, // Will be updated after file upload
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // Upload ID file if provided (now the user is authenticated)
             if (idFile) {
                 try {
                     const uploadResult = await this.uploadFile(idFile, `users/${user.uid}/identity`);
                     if (uploadResult.success) {
                         idFileUrl = uploadResult.downloadURL;
+                        // Update user document with ID file URL
+                        await this.db.collection('users').doc(user.uid).update({
+                            idFileUrl: idFileUrl,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
                     } else {
                         console.error('Failed to upload ID file:', uploadResult.error);
                         // Continue registration even if file upload fails
@@ -64,14 +80,6 @@ class FirebaseService {
                     // Continue registration even if file upload fails
                 }
             }
-            
-            // Save additional user data to Firestore
-            await this.db.collection('users').doc(user.uid).set({
-                ...userData,
-                email: user.email,
-                idFileUrl: idFileUrl,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
             
             this.currentUser = user;
             return { success: true, user: this.currentUser };

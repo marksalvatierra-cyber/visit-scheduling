@@ -315,9 +315,9 @@ const LoginModal = ({ isOpen, onClose }) => {
           affiliation: formData.register.affiliation,
           idType: formData.register.idType,
           role: 'client', // Default to client
-          uid: null, // Will be set by Firebase Auth
           profileStatus: 'pending_verification', // New users need verification
-          registrationDate: new Date().toISOString()
+          registrationDate: new Date().toISOString(),
+          status: 'active' // Set account status to active
         };
         
         // Create user account with Firebase Authentication and save data
