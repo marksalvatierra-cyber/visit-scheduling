@@ -1,10 +1,12 @@
 import React, { useState } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom'
 import './App.css'
 import LoginModal from './LoginModal'
 import AdminDashboard from './components/AdminDashboard'
 import OfficerDashboard from './components/OfficerDashboard'
 import ClientDashboard from './components/ClientDashboard'
+import About from './components/About'
+import Contacts from './components/Contacts'
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,9 +46,9 @@ function App() {
               </div>
               <nav className="main-nav">
                 <div className="nav-links">
-                  <a href="#" className="active">Home</a>
-                  <a href="#">About</a>
-                  <a href="#">Contacts</a>
+                  <Link to="/">Home</Link>
+                  <Link to="/about">About</Link>
+                  <Link to="/contacts">Contacts</Link>
                 </div>
                 <button className="login-btn" onClick={handleLoginClick}>Login</button>
               </nav>
@@ -157,6 +159,162 @@ function App() {
             <LoginModal isOpen={isModalOpen} onClose={handleCloseModal} />
           </div>
         } />
+        
+        {/* About Page Route */}
+        <Route path="/about" element={(
+          <div className="app landing-page">
+            {/* Header */}
+            <header className="main-header">
+              <div className="header-left">
+                <div className="header-branding">
+                  <div className="main-branding">
+                    <div className="logo">
+                      <img src="/image/12.png" alt="Central Prison Camp Sablayan Penal Farm Logo" className="logo-image" />
+                    </div>
+                    <div className="header-text">
+                      <div className="republic-text">
+                        <div className="republic">Republic of the Philippines</div>
+                        <div className="republic-underline"></div>
+                      </div>
+                      <div className="bureau">Central Prison Camp Sablayan Penal Farm</div>
+                      <div className="tagline">"Bagong Pilipinas Bagong Pag-asa"</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <nav className="main-nav">
+                <div className="nav-links">
+                  <Link to="/">Home</Link>
+                  <Link to="/about">About</Link>
+                  <Link to="/contacts">Contacts</Link>
+                </div>
+                <button className="login-btn" onClick={handleLoginClick}>Login</button>
+              </nav>
+            </header>
+
+            {/* Main Content - About Page */}
+            <main className="main-content">
+              <About />
+            </main>
+
+            {/* Footer */}
+            <footer className="main-footer">
+              <div className="footer-content">
+                <span>&copy; 2025 Central Prison Camp Sablayan Penal Farm. All rights reserved.</span>
+                <span className="footer-divider">|</span>
+                <span>Sablayan Prison and Penal Farm, Philippines</span>
+                <a href="mailto:info@bucor.gov.ph" className="footer-icon" aria-label="Email">✉️</a>
+              </div>
+            </footer>
+            
+            {/* Login Modal */}
+            <LoginModal isOpen={isModalOpen} onClose={handleCloseModal} />
+          </div>
+        )} />
+        
+        {/* Contacts Page Route */}
+        <Route path="/contacts" element={(
+          <div className="app landing-page">
+            {/* Header */}
+            <header className="main-header">
+              <div className="header-left">
+                <div className="header-branding">
+                  <div className="main-branding">
+                    <div className="logo">
+                      <img src="/image/12.png" alt="Central Prison Camp Sablayan Penal Farm Logo" className="logo-image" />
+                    </div>
+                    <div className="header-text">
+                      <div className="republic-text">
+                        <div className="republic">Republic of the Philippines</div>
+                        <div className="republic-underline"></div>
+                      </div>
+                      <div className="bureau">Central Prison Camp Sablayan Penal Farm</div>
+                      <div className="tagline">"Bagong Pilipinas Bagong Pag-asa"</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <nav className="main-nav">
+                <div className="nav-links">
+                  <Link to="/">Home</Link>
+                  <Link to="/about">About</Link>
+                  <Link to="/contacts">Contacts</Link>
+                </div>
+                <button className="login-btn" onClick={handleLoginClick}>Login</button>
+              </nav>
+            </header>
+
+            {/* Main Content - Contacts Page */}
+            <main className="main-content">
+              <Contacts />
+            </main>
+
+            {/* Footer */}
+            <footer className="main-footer">
+              <div className="footer-content">
+                <span>&copy; 2025 Central Prison Camp Sablayan Penal Farm. All rights reserved.</span>
+                <span className="footer-divider">|</span>
+                <span>Sablayan Prison and Penal Farm, Philippines</span>
+                <a href="mailto:info@bucor.gov.ph" className="footer-icon" aria-label="Email">✉️</a>
+              </div>
+            </footer>
+            
+            {/* Login Modal */}
+            <LoginModal isOpen={isModalOpen} onClose={handleCloseModal} />
+          </div>
+        )} />
+        
+        {/* Contacts Page Route */}
+        <Route path="/contacts" element={(
+          <div className="app landing-page">
+            {/* Header */}
+            <header className="main-header">
+              <div className="header-left">
+                <div className="header-branding">
+                  <div className="main-branding">
+                    <div className="logo">
+                      <img src="/image/12.png" alt="Central Prison Camp Sablayan Penal Farm Logo" className="logo-image" />
+                    </div>
+                    <div className="header-text">
+                      <div className="republic-text">
+                        <div className="republic">Republic of the Philippines</div>
+                        <div className="republic-underline"></div>
+                      </div>
+                      <div className="bureau">Central Prison Camp Sablayan Penal Farm</div>
+                      <div className="tagline">"Bagong Pilipinas Bagong Pag-asa"</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <nav className="main-nav">
+                <div className="nav-links">
+                  <Link to="/">Home</Link>
+                  <Link to="/about">About</Link>
+                  <Link to="/contacts">Contacts</Link>
+                </div>
+                <button className="login-btn" onClick={handleLoginClick}>Login</button>
+              </nav>
+            </header>
+
+            {/* Main Content - Contacts Page */}
+            <main className="main-content">
+              <Contacts />
+            </main>
+
+            {/* Footer */}
+            <footer className="main-footer">
+              <div className="footer-content">
+                <span>&copy; 2025 Central Prison Camp Sablayan Penal Farm. All rights reserved.</span>
+                <span className="footer-divider">|</span>
+                <span>Sablayan Prison and Penal Farm, Philippines</span>
+                <a href="mailto:info@bucor.gov.ph" className="footer-icon" aria-label="Email">✉️</a>
+              </div>
+            </footer>
+            
+            {/* Login Modal */}
+            <LoginModal isOpen={isModalOpen} onClose={handleCloseModal} />
+          </div>
+        )} />
         
         {/* Admin Routes */}
         <Route path="/admin/*" element={<AdminDashboard />} />

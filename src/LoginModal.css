@@ -502,6 +502,13 @@
   padding-bottom: 15px;
 }
 
+/* Add spacing above the registration modal footer */
+.modal-register-box .modal-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
 /* Multi-Step Progress Indicator */
 .step-progress {
   margin-bottom: 2rem;
