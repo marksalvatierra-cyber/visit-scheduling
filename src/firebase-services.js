@@ -75,10 +75,7 @@ class FirebaseService {
             
             // Send email verification
             try {
-                await user.sendEmailVerification({
-                    url: window.location.origin + '/login',
-                    handleCodeInApp: false
-                });
+                await user.sendEmailVerification();
             } catch (emailError) {
                 console.error('Error sending verification email:', emailError);
                 // Continue with registration even if email fails
@@ -165,10 +162,7 @@ async sendPasswordReset(email) {
                 return { success: false, error: 'Email is already verified.' };
             }
             
-            await user.sendEmailVerification({
-                url: window.location.origin + '/login',
-                handleCodeInApp: false
-            });
+            await user.sendEmailVerification();
             
             return { success: true };
         } catch (error) {

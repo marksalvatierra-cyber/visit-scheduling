@@ -32,6 +32,7 @@ const LoginModal = ({ isOpen, onClose }) => {
   const [filePreview, setFilePreview] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
   
   // Terms and Conditions modal state
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -340,6 +341,7 @@ const LoginModal = ({ isOpen, onClose }) => {
     }
 
     if (formType === 'register') {
+      setIsRegistering(true);
       try {
         // Prepare user data for registration
         const userData = {
@@ -378,6 +380,8 @@ const LoginModal = ({ isOpen, onClose }) => {
           // After successful registration, sign out the user and redirect to login
           await firebaseService.signOut();
           
+          setIsRegistering(false);
+          
           // Show success alert with email verification instructions
           alert('🎉 Account created successfully!\n\n📧 A verification email has been sent to ' + formData.register.email + '.\n\nPlease check your inbox and verify your email before logging in.');
           
@@ -409,9 +413,11 @@ const LoginModal = ({ isOpen, onClose }) => {
           setCurrentView('login');
           
         } else {
+          setIsRegistering(false);
           setError(result.error || 'Registration failed.');
         }
       } catch (error) {
+        setIsRegistering(false);
         setError('Registration failed: ' + error.message);
       }
       return;
@@ -937,6 +943,17 @@ const LoginModal = ({ isOpen, onClose }) => {
         onAccept={handleTermsAccept}
         onClose={handleTermsClose}
       />
+
+      {/* Loading Screen */}
+      {isRegistering && (
+        <div className="loading-overlay">
+          <div className="loading-content">
+            <div className="loading-spinner"></div>
+            <h3>Creating Your Account</h3>
+            <p>Please wait while we set up your account and send verification email...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
