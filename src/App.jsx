@@ -7,6 +7,7 @@ import OfficerDashboard from './components/OfficerDashboard'
 import ClientDashboard from './components/ClientDashboard'
 import About from './components/About'
 import Contacts from './components/Contacts'
+import SplitBanner from './components/SplitBanner'
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -58,9 +59,7 @@ function App() {
             <main className="main-content">
               <section className="top-section">
                 <div className="banner-large">
-                  <div className="banner-image-container">
-                    <img src="/image/Banner.png" alt="Panata sa Bagong Pilipinas" />
-                  </div>
+                  <SplitBanner onLoginClick={handleLoginClick} />
                 </div>
                 <div className="banner-side">
                   <div className="side-banner tips-banner">
