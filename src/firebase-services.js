@@ -380,6 +380,8 @@ async sendPasswordReset(email) {
                     logAction = 'rejected';
                 } else if (newStatus === 'rescheduled') {
                     logAction = 'rescheduled';
+                } else if (newStatus === 'cancelled') {
+                    logAction = 'cancelled';
                 }
                 
                 // Create comprehensive log data
@@ -411,6 +413,10 @@ async sendPasswordReset(email) {
                     logData.rescheduleReason = data.rescheduleReason;
                     logData.actionReason = data.rescheduleReason;
                 }
+                if (data.cancellationReason) {
+                    logData.cancellationReason = data.cancellationReason;
+                    logData.actionReason = data.cancellationReason;
+                }
                 
                 console.log('Final log data being created:', logData);
                 
@@ -439,6 +445,49 @@ async sendPasswordReset(email) {
             };
         } catch (error) {
             console.error('Error in updateVisitRequest:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Cancel visit request (client-initiated)
+    async cancelVisitRequest(requestId, cancellationReason) {
+        try {
+            const currentUser = this.auth.currentUser;
+            if (!currentUser) {
+                throw new Error('User must be authenticated to cancel visit requests');
+            }
+
+            // Get the request to verify it belongs to the user and check status
+            const requestDoc = await this.db.collection('visitRequests').doc(requestId).get();
+            if (!requestDoc.exists) {
+                throw new Error('Visit request not found');
+            }
+
+            const requestData = requestDoc.data();
+            
+            // Verify ownership
+            if (requestData.clientId !== currentUser.uid) {
+                throw new Error('You can only cancel your own visit requests');
+            }
+
+            // Only allow cancellation for pending or approved requests
+            const status = this.normalizeStatus(requestData.status);
+            if (status !== 'pending' && status !== 'approved') {
+                throw new Error(`Cannot cancel a ${status} visit request`);
+            }
+
+            // Update the request to cancelled status
+            await this.updateVisitRequest(requestId, {
+                status: 'cancelled',
+                cancellationReason: cancellationReason || 'Client cancelled',
+                cancelledAt: firebase.firestore.FieldValue.serverTimestamp(),
+                cancelledBy: currentUser.uid,
+                reviewedBy: requestData.clientName || 'Client'
+            });
+
+            return { success: true };
+        } catch (error) {
+            console.error('Error cancelling visit request:', error);
             return { success: false, error: error.message };
         }
     }
@@ -775,7 +824,8 @@ async sendPasswordReset(email) {
                 approved: 0,
                 pending: 0,
                 rejected: 0,
-                rescheduled: 0
+                rescheduled: 0,
+                completed: 0
             };
             
             snapshot.forEach(doc => {
@@ -788,12 +838,17 @@ async sendPasswordReset(email) {
                     // Unknown status, ignore to prevent NaN
                     console.warn('Encountered unknown status while counting stats:', data.status);
                 }
+                
+                // Count completed visits (those with completed flag = true)
+                if (data.completed === true) {
+                    stats.completed++;
+                }
             });
             
             return stats;
         } catch (error) {
             console.error('Error getting dashboard stats:', error);
-            return { total: 0, approved: 0, pending: 0, rejected: 0, rescheduled: 0 };
+            return { total: 0, approved: 0, pending: 0, rejected: 0, rescheduled: 0, completed: 0 };
         }
     }
 
@@ -1239,10 +1294,18 @@ async sendPasswordReset(email) {
 
     async markQRCodeAsUsed(visitId, scannedBy) {
         try {
+            // Update the QR code record
             await this.db.collection('visitQRCodes').doc(visitId).update({
                 scannedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 scannedBy: scannedBy,
                 lastScanned: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // Add completed flag to visit request (keep status as approved)
+            await this.db.collection('visitRequests').doc(visitId).update({
+                completed: true,
+                completedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                scannedBy: scannedBy
             });
             
             return { success: true };

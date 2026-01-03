@@ -179,6 +179,7 @@ const VisitRequests = ({ currentOfficer = null }) => {
       case 'pending': return 'badge-pending';
       case 'reschedule': return 'badge-reschedule';
       case 'rejected': return 'badge-rejected';
+      case 'cancelled': return 'badge-cancelled';
       default: return 'badge-pending';
     }
   };
@@ -189,6 +190,7 @@ const VisitRequests = ({ currentOfficer = null }) => {
       case 'pending': return 'Pending';
       case 'reschedule': return 'Reschedule';
       case 'rejected': return 'Rejected';
+      case 'cancelled': return 'Cancelled';
       default: return 'Pending';
     }
   };
@@ -573,6 +575,7 @@ const VisitRequests = ({ currentOfficer = null }) => {
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
             <option value="reschedule">Reschedule</option>
+            <option value="cancelled">Cancelled</option>
           </select>
         </div>
       </div>

@@ -418,6 +418,26 @@
   animation: pulse 2s infinite;
 }
 
+.badge-cancelled {
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  color: #4b5563;
+  border-color: rgba(107, 114, 128, 0.2);
+  text-decoration: line-through;
+}
+
+.badge-cancelled::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  background: #6b7280;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
 @keyframes pulse {
   0%, 100% {
     opacity: 1;

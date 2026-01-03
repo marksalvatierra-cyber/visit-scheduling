@@ -57,25 +57,8 @@ function App() {
 
             {/* Main Content */}
             <main className="main-content">
-              <section className="top-section">
-                <div className="banner-large">
-                  <SplitBanner onLoginClick={handleLoginClick} />
-                </div>
-                <div className="banner-side">
-                  <div className="side-banner tips-banner">
-                    <div className="tips-card">
-                      <h2 className="tips-title">Tips for Scheduling Your Visit</h2>
-                      <ul className="tips-list">
-                        <li>Check available dates before planning your visit.</li>
-                        <li>Prepare all required documents (valid ID, authorization, etc.).</li>
-                        <li>Review visitor guidelines and restrictions.</li>
-                      </ul>
-                      <button className="schedule-btn" onClick={handleLoginClick}>
-                        Schedule Now
-                      </button>
-                    </div>
-                  </div>
-                </div>
+              <section className="hero-section">
+                <SplitBanner onLoginClick={handleLoginClick} />
               </section>
 
               <section className="bottom-section">

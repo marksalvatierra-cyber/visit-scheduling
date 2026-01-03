@@ -362,6 +362,12 @@
   color: #1e40af;
 }
 
+.status.cancelled {
+  background: #f3f4f6;
+  color: #4b5563;
+  text-decoration: line-through;
+}
+
 /* Subtle View Button */
 .view-btn {
   background: transparent;

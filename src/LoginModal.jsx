@@ -158,10 +158,6 @@ const LoginModal = ({ isOpen, onClose }) => {
           setError('Please enter a valid mobile number (7-15 digits)!');
           return false;
         }
-        if (!registerData.affiliation?.trim()) {
-          setError('Affiliation is required!');
-          return false;
-        }
         break;
         
       case 3: // Identity Verification
@@ -349,10 +345,9 @@ const LoginModal = ({ isOpen, onClose }) => {
           middleName: formData.register.middleName,
           surname: formData.register.surname,
           fullName: `${formData.register.firstName} ${formData.register.middleName} ${formData.register.surname}`.replace(/\s+/g, ' ').trim(),
-          country: formData.register.country,
+          country: 'Philippines',
           completeAddress: formData.register.completeAddress,
-          mobileNumber: `${countryCode}${formData.register.mobileNumber}`, // Save with country code
-          affiliation: formData.register.affiliation,
+          mobileNumber: `+63${formData.register.mobileNumber}`,
           idType: formData.register.idType,
           role: 'client', // Default to client
           profileStatus: 'pending_verification', // New users need verification
@@ -674,48 +669,6 @@ const LoginModal = ({ isOpen, onClose }) => {
                 <h3 className="step-title">Where can we reach you?</h3>
                 
                 <div className="input-wrapper">
-                  <span className="input-icon">🌍</span>
-                  <select
-                    className="modal-input modal-select"
-                    aria-label="Country"
-                    value={formData.register.country}
-                    onChange={(e) => handleCountryChange(e.target.value)}
-                  >
-                    <option value="">Select Country</option>
-                    <option value="Philippines">Philippines</option>
-                    <option value="United States">United States</option>
-                    <option value="Canada">Canada</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                    <option value="Australia">Australia</option>
-                    <option value="Japan">Japan</option>
-                    <option value="South Korea">South Korea</option>
-                    <option value="Singapore">Singapore</option>
-                    <option value="Malaysia">Malaysia</option>
-                    <option value="Thailand">Thailand</option>
-                    <option value="Indonesia">Indonesia</option>
-                    <option value="Vietnam">Vietnam</option>
-                    <option value="China">China</option>
-                    <option value="India">India</option>
-                    <option value="United Arab Emirates">United Arab Emirates</option>
-                    <option value="Saudi Arabia">Saudi Arabia</option>
-                    <option value="Qatar">Qatar</option>
-                    <option value="Hong Kong">Hong Kong</option>
-                    <option value="Taiwan">Taiwan</option>
-                    <option value="New Zealand">New Zealand</option>
-                    <option value="Germany">Germany</option>
-                    <option value="France">France</option>
-                    <option value="Italy">Italy</option>
-                    <option value="Spain">Spain</option>
-                    <option value="Netherlands">Netherlands</option>
-                    <option value="Switzerland">Switzerland</option>
-                    <option value="Sweden">Sweden</option>
-                    <option value="Norway">Norway</option>
-                    <option value="Denmark">Denmark</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                
-                <div className="input-wrapper">
                   <span className="input-icon">📍</span>
                   <textarea
                     className="modal-input modal-textarea"
@@ -729,7 +682,7 @@ const LoginModal = ({ isOpen, onClose }) => {
 
                 <div className="input-wrapper mobile-input-wrapper">
                   <span className="input-icon">📱</span>
-                  <span className="country-code-prefix">{countryCode}</span>
+                  <span className="country-code-prefix">+63</span>
                   <input
                     type="tel"
                     className="modal-input mobile-input"
@@ -738,22 +691,6 @@ const LoginModal = ({ isOpen, onClose }) => {
                     value={formData.register.mobileNumber}
                     onChange={(e) => handleMobileNumberChange(e.target.value)}
                     maxLength="15"
-                  />
-                </div>
-                <div className="info-message mobile-hint">
-                  <span className="info-icon">💡</span>
-                  <p>Enter your mobile number without the country code</p>
-                </div>
-                
-                <div className="input-wrapper">
-                  <span className="input-icon">🏢</span>
-                  <input
-                    type="text"
-                    className="modal-input"
-                    placeholder="Affiliation (Organization/Company)"
-                    aria-label="Affiliation"
-                    value={formData.register.affiliation}
-                    onChange={(e) => handleInputChange('register', 'affiliation', e.target.value)}
                   />
                 </div>
               </div>
