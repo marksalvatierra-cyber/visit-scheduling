@@ -11,6 +11,7 @@ import SplitBanner from './components/SplitBanner'
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLoginClick = () => {
     setIsModalOpen(true);
@@ -18,6 +19,14 @@ function App() {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+  };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
   };
 
   return (
@@ -39,7 +48,8 @@ function App() {
                         <div className="republic">Republic of the Philippines</div>
                         <div className="republic-underline"></div>
                       </div>
-                      <div className="bureau">Central Prison Camp Sablayan Penal Farm</div>
+                      <div className="bureau">Central Prison Camp Sablayan</div>
+                      <div className="bureau-sub">Penal Farm</div>
                       <div className="tagline">"Bagong Pilipinas Bagong Pag-asa"</div>
                     </div>
                   </div>
@@ -53,7 +63,26 @@ function App() {
                 </div>
                 <button className="login-btn" onClick={handleLoginClick}>Login</button>
               </nav>
+              
+              {/* Mobile Hamburger Menu */}
+              <button className="mobile-menu-toggle" onClick={toggleMobileMenu} aria-label="Toggle menu">
+                <span className={`hamburger-line ${isMobileMenuOpen ? 'open' : ''}`}></span>
+                <span className={`hamburger-line ${isMobileMenuOpen ? 'open' : ''}`}></span>
+                <span className={`hamburger-line ${isMobileMenuOpen ? 'open' : ''}`}></span>
+              </button>
             </header>
+
+            {/* Mobile Menu Overlay */}
+            <div className={`mobile-menu-overlay ${isMobileMenuOpen ? 'open' : ''}`} onClick={closeMobileMenu}>
+              <nav className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`} onClick={(e) => e.stopPropagation()}>
+                <div className="mobile-nav-links">
+                  <Link to="/" onClick={closeMobileMenu}>Home</Link>
+                  <Link to="/about" onClick={closeMobileMenu}>About</Link>
+                  <Link to="/contacts" onClick={closeMobileMenu}>Contacts</Link>
+                </div>
+                <button className="mobile-login-btn" onClick={() => { handleLoginClick(); closeMobileMenu(); }}>Login</button>
+              </nav>
+            </div>
 
             {/* Main Content */}
             <main className="main-content">
@@ -158,7 +187,8 @@ function App() {
                         <div className="republic">Republic of the Philippines</div>
                         <div className="republic-underline"></div>
                       </div>
-                      <div className="bureau">Central Prison Camp Sablayan Penal Farm</div>
+                      <div className="bureau">Central Prison Camp Sablayan</div>
+                      <div className="bureau-sub">Penal Farm</div>
                       <div className="tagline">"Bagong Pilipinas Bagong Pag-asa"</div>
                     </div>
                   </div>
@@ -210,7 +240,8 @@ function App() {
                         <div className="republic">Republic of the Philippines</div>
                         <div className="republic-underline"></div>
                       </div>
-                      <div className="bureau">Central Prison Camp Sablayan Penal Farm</div>
+                      <div className="bureau">Central Prison Camp Sablayan</div>
+                      <div className="bureau-sub">Penal Farm</div>
                       <div className="tagline">"Bagong Pilipinas Bagong Pag-asa"</div>
                     </div>
                   </div>

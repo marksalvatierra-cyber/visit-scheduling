@@ -453,24 +453,35 @@
 
 @media (max-width: 768px) {
   .split-banner {
-    border-radius: 12px;
+    border-radius: 0;
     min-height: auto;
   }
 
   .hero-container {
-    padding: 2rem 1.5rem;
+    padding: 0;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* Hero Content - Full width, clean vertical layout */
+  .hero-content {
+    padding: 2.5rem 1.5rem;
+    order: 1;
   }
 
   .hero-title {
     font-size: 2rem;
+    text-align: left;
   }
 
   .hero-description {
     font-size: 1rem;
+    text-align: left;
   }
 
   .hero-cta-group {
     flex-direction: column;
+    gap: 0.75rem;
   }
 
   .hero-btn-primary,
@@ -479,7 +490,28 @@
     justify-content: center;
   }
 
+  /* Tips section */
+  .hero-tips {
+    margin-top: 1.5rem;
+  }
+
+  /* DateTime Widget - Below content */
+  .datetime-widget {
+    order: 2;
+    padding: 2rem 1.5rem 2.5rem;
+    background: #f9fafb;
+  }
+
   .datetime-card {
     max-width: 100%;
+  }
+
+  /* Calendar styling adjustments */
+  .calendar-grid {
+    gap: 0.3rem;
+  }
+
+  .calendar-day {
+    font-size: 0.75rem;
   }
 }

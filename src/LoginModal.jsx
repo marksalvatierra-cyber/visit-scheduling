@@ -141,10 +141,6 @@ const LoginModal = ({ isOpen, onClose }) => {
         break;
         
       case 2: // Contact & Address
-        if (!registerData.country?.trim()) {
-          setError('Country is required!');
-          return false;
-        }
         if (!registerData.completeAddress?.trim()) {
           setError('Complete address is required!');
           return false;

@@ -97,6 +97,13 @@ body {
   margin-bottom: 2px;
 }
 
+.bureau-sub {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 2px;
+}
+
 .tagline {
   font-size: 0.75rem;
   color: #6b7280;
@@ -572,26 +579,232 @@ body {
   transform: scale(1.1);
 }
 
+/* Mobile Hamburger Menu */
+.mobile-menu-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  z-index: 1001;
+  outline: none;
+}
+
+.mobile-menu-toggle:focus {
+  outline: none;
+}
+
+.hamburger-line {
+  width: 25px;
+  height: 3px;
+  background: #1f2937;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.hamburger-line.open:nth-child(1) {
+  transform: rotate(45deg) translate(8px, 8px);
+}
+
+.hamburger-line.open:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-line.open:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -7px);
+}
+
+/* Mobile Menu Overlay */
+.mobile-menu-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.mobile-menu-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.mobile-menu {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 280px;
+  height: 100%;
+  background: white;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  padding: 2rem 1.5rem;
+  transition: right 0.3s ease;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.mobile-menu.open {
+  right: 0;
+}
+
+.mobile-menu-header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mobile-menu-close {
+  background: transparent;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.mobile-menu-close:hover {
+  color: #1f2937;
+  transform: rotate(90deg);
+}
+
+.mobile-nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.mobile-nav-links a {
+  text-decoration: none;
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 1.1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.mobile-nav-links a:hover {
+  color: #667eea;
+  padding-left: 0.5rem;
+}
+
+.mobile-login-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  margin-top: auto;
+}
+
+.mobile-login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
 /* Enhanced Responsive Design */
 @media (max-width: 768px) {
+  /* Mobile Header - Reorganized Layout */
   .main-header {
     flex-direction: column;
-    gap: 1rem;
-    padding: 1rem;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    position: relative;
   }
 
+  /* Text content on top */
   .header-left {
-    flex-direction: column;
-    text-align: center;
+    width: 100%;
+    order: 1;
   }
 
+  .header-branding {
+    align-items: center;
+    width: 100%;
+  }
+
+  .main-branding {
+    flex-direction: row;
+    gap: 1rem;
+    align-items: center;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  /* Logo on left */
+  .logo {
+    order: 1;
+    flex-shrink: 0;
+  }
+
+  .logo-image {
+    height: 70px;
+  }
+
+  /* Text on right */
+  .header-text {
+    order: 2;
+    text-align: left;
+    flex: 1;
+  }
+
+  .republic-text {
+    margin-bottom: 0.15rem;
+  }
+
+  .republic {
+    font-size: 0.65rem;
+  }
+
+  .bureau {
+    font-size: 0.85rem;
+    line-height: 1.3;
+  }
+
+  .bureau-sub {
+    font-size: 0.85rem;
+    line-height: 1.3;
+    margin-top: -2px;
+  }
+
+  .tagline {
+    font-size: 0.65rem;
+  }
+
+  /* Hide desktop navigation */
   .main-nav {
-    flex-direction: column;
-    gap: 1rem;
+    display: none;
   }
 
-  .nav-links {
-    gap: 1rem;
+  /* Show mobile menu toggle */
+  .mobile-menu-toggle {
+    display: flex;
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+  }
+
+  .mobile-menu-overlay {
+    display: block;
   }
 
   .main-content {
@@ -614,13 +827,134 @@ body {
     text-align: center;
   }
 
-  .story-card {
-    flex-direction: column;
+  /* Featured Story Mobile Enhancements */
+  .featured-story {
+    padding: 1.5rem;
+    border-radius: 15px;
+  }
+
+  .featured-story h2 {
+    font-size: 1.3rem;
+    margin-bottom: 1.2rem;
     text-align: center;
   }
 
+  .story-card {
+    flex-direction: row;
+    gap: 1rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .story-card:hover {
+    transform: translateX(0);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
   .story-thumb {
-    align-self: center;
+    width: 70px;
+    height: 70px;
+    flex-shrink: 0;
+    border-radius: 10px;
+  }
+
+  .story-content {
+    flex: 1;
+    text-align: left;
+  }
+
+  .story-title {
+    font-size: 0.9rem;
+    line-height: 1.3;
+    margin-bottom: 0.4rem;
+  }
+
+  .story-desc {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    margin-bottom: 0.4rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .story-date {
+    font-size: 0.7rem;
+  }
+
+  /* Map Section Mobile Enhancements */
+  .map-section,
+  .unified-contact-card {
+    border-radius: 15px;
+    overflow: hidden;
+  }
+
+  .contact-title {
+    padding: 1.5rem 1.5rem 0;
+    font-size: 1.3rem;
+    text-align: center;
+  }
+
+  .map-embed-wrapper {
+    height: 220px;
+    margin: 1rem 1.5rem;
+    border-radius: 12px;
+  }
+
+  .map-divider {
+    margin: 0 1.5rem;
+  }
+
+  .map-contact {
+    padding: 1.5rem;
+  }
+
+  .contact-org {
+    font-size: 1rem;
+    text-align: center;
+    margin-bottom: 0.4rem;
+  }
+
+  .contact-address {
+    font-size: 0.85rem;
+    text-align: center;
+    margin-bottom: 1.2rem;
+  }
+
+  .contact-row {
+    gap: 0.6rem;
+    padding: 0.6rem;
+    margin-bottom: 0.6rem;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  .contact-icon {
+    font-size: 1rem;
+  }
+
+  .contact-label {
+    font-size: 0.85rem;
+    min-width: 60px;
+  }
+
+  .contact-link {
+    font-size: 0.85rem;
+  }
+
+  /* Bottom section spacing */
+  .landing-page .main-content {
+    padding: 1.5rem 1rem;
+  }
+
+  .landing-page .bottom-section {
+    gap: 1.5rem;
+    margin-top: 1rem;
   }
 }
 
