@@ -324,6 +324,8 @@ const Schedule = () => {
                     name="visitTime"
                     value={form.visitTime}
                     onChange={handleChange}
+                    min="07:00"
+                    max="15:00"
                     required
                   />
                 </div>
