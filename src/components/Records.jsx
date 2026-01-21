@@ -94,7 +94,7 @@ setFilteredInmates(sortedInmates);
           lastName: 'Anderson',
           middleName: 'Michael',
           inmateNumber: 'INM-001',
-          cellNumber: 'A-101',
+          secCategory: 'Maximum',
           dateOfBirth: '1985-03-15',
           status: 'active'
         },
@@ -104,7 +104,7 @@ setFilteredInmates(sortedInmates);
           lastName: 'Brown',
           middleName: 'Elizabeth',
           inmateNumber: 'INM-002',
-          cellNumber: 'B-205',
+          secCategory: 'Medium',
           dateOfBirth: '1990-07-22',
           status: 'active'
         },
@@ -114,7 +114,7 @@ setFilteredInmates(sortedInmates);
           lastName: 'Davis',
           middleName: 'Robert',
           inmateNumber: 'INM-003',
-          cellNumber: 'C-312',
+          secCategory: 'Minimum',
           dateOfBirth: '1988-11-08',
           status: 'inactive'
         },
@@ -124,7 +124,7 @@ setFilteredInmates(sortedInmates);
           lastName: 'Wilson',
           middleName: 'Grace',
           inmateNumber: 'INM-004',
-          cellNumber: 'D-401',
+          secCategory: 'Medium',
           dateOfBirth: '1992-04-30',
           status: 'active'
         }
@@ -174,10 +174,10 @@ setFilteredInmates(sortedInmates);
     const results = allInmates.filter(inmate => {
       const fullName = `${inmate.firstName} ${inmate.middleName || ''} ${inmate.lastName}`.toLowerCase();
       const inmateNumber = (inmate.inmateNumber || '').toLowerCase();
-      const cellNumber = (inmate.cellNumber || '').toLowerCase();
+      const secCategory = (inmate.secCategory || '').toLowerCase();
       return fullName.includes(searchTerm.toLowerCase()) ||
         inmateNumber.includes(searchTerm.toLowerCase()) ||
-        cellNumber.includes(searchTerm.toLowerCase());
+        secCategory.includes(searchTerm.toLowerCase());
     });
 
     setFilteredInmates(results);
@@ -342,8 +342,8 @@ setFilteredInmates(sortedInmates);
 
           <div className="modern-inmate-details">
             <div className="modern-inmate-detail">
-              <span className="modern-detail-label">Cell:</span>
-              <span className="modern-detail-value">{inmate.cellNumber || 'N/A'}</span>
+              <span className="modern-detail-label">Sec Category:</span>
+              <span className="modern-detail-value">{inmate.secCategory || 'N/A'}</span>
             </div>
             <div className="modern-inmate-detail">
               <span className="modern-detail-label">Status:</span>
@@ -422,7 +422,7 @@ setFilteredInmates(sortedInmates);
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && searchInmates()}
             className="unified-search-input"
-            placeholder="Search by name, inmate number, or cell number..."
+            placeholder="Search by name, inmate number, or security category..."
           />
         </div>
       </div>
