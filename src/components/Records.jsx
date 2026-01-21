@@ -28,6 +28,18 @@ const Records = () => {
   const [loading, setLoading] = useState(false);
   const [visitRequests, setVisitRequests] = useState([]);
   const [visitHistoryLoading, setVisitHistoryLoading] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    firstName: '',
+    lastName: '',
+    middleName: '',
+    inmateNumber: '',
+    secCategory: '',
+    dateOfBirth: ''
+  });
+  const [editError, setEditError] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
 
   // Alphabet sections
   const sections = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
@@ -250,6 +262,86 @@ setFilteredInmates(sortedInmates);
     }
   };
 
+  const openEditModal = (inmate) => {
+    setEditFormData({
+      firstName: inmate.firstName || '',
+      lastName: inmate.lastName || '',
+      middleName: inmate.middleName || '',
+      inmateNumber: inmate.inmateNumber || '',
+      secCategory: inmate.secCategory || '',
+      dateOfBirth: inmate.dateOfBirth || ''
+    });
+    setSelectedInmate(inmate);
+    setShowEditModal(true);
+    setEditError('');
+  };
+
+  const closeEditModal = () => {
+    setShowEditModal(false);
+    setEditFormData({
+      firstName: '',
+      lastName: '',
+      middleName: '',
+      inmateNumber: '',
+      secCategory: '',
+      dateOfBirth: ''
+    });
+    setEditError('');
+    setSelectedInmate(null);
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditLoading(true);
+    setEditError('');
+
+    try {
+      if (!editFormData.firstName || !editFormData.lastName || !editFormData.inmateNumber) {
+        setEditError('First name, last name, and inmate number are required.');
+        setEditLoading(false);
+        return;
+      }
+
+      const result = await firebaseService.updateInmate(selectedInmate.id, editFormData);
+
+      if (result.success) {
+        const updatedInmate = { ...selectedInmate, ...editFormData };
+        setAllInmates(prev => prev.map(inmate =>
+          inmate.id === selectedInmate.id ? updatedInmate : inmate
+        ));
+        setFilteredInmates(prev => prev.map(inmate =>
+          inmate.id === selectedInmate.id ? updatedInmate : inmate
+        ));
+        
+        alert('Inmate information updated successfully!');
+        closeEditModal();
+      } else {
+        throw new Error(result.error || 'Failed to update inmate');
+      }
+    } catch (error) {
+      console.error('Error updating inmate:', error);
+      setEditError('Error updating inmate: ' + error.message);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleCardClick = (inmate) => {
+    if (editMode) {
+      openEditModal(inmate);
+    } else {
+      viewInmateDetails(inmate);
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -314,8 +406,29 @@ setFilteredInmates(sortedInmates);
         <div
           key={inmate.id}
           className={`modern-inmate-card ${inmate.status === 'inactive' ? 'inactive' : hasUpcoming ? 'has-upcoming-visit' : ''}`}
-          onClick={() => viewInmateDetails(inmate)}
+          onClick={() => handleCardClick(inmate)}
+          style={{ position: 'relative', cursor: 'pointer' }}
         >
+          {editMode && (
+            <div style={{
+              position: 'absolute',
+              top: '8px',
+              right: '8px',
+              background: '#3b82f6',
+              borderRadius: '50%',
+              width: '28px',
+              height: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+            </div>
+          )}
           <div className="modern-inmate-header">
             <div className="modern-inmate-avatar">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -328,7 +441,7 @@ setFilteredInmates(sortedInmates);
                 width: '8px',
                 height: '8px',
                 borderRadius: '50%',
-                background: selectedInmate?.status === 'active' ? '#10b981' : '#ef4444'
+                background: inmate.status === 'active' ? '#10b981' : '#ef4444'
               }}></div>
             </div>
           </div>
@@ -425,6 +538,34 @@ setFilteredInmates(sortedInmates);
             placeholder="Search by name, inmate number, or security category..."
           />
         </div>
+        {currentView === 'inmates' && (
+          <button
+            onClick={() => setEditMode(!editMode)}
+            style={{
+              padding: '10px 20px',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: editMode ? '#10b981' : '#3b82f6',
+              color: 'white',
+              transition: 'all 0.2s ease',
+              marginLeft: '12px'
+            }}
+            onMouseOver={(e) => e.target.style.opacity = '0.9'}
+            onMouseOut={(e) => e.target.style.opacity = '1'}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            {editMode ? 'Done Editing' : 'Edit Mode'}
+          </button>
+        )}
       </div>
 
       {/* Modern Sections Grid */}
@@ -621,6 +762,202 @@ setFilteredInmates(sortedInmates);
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div className="modern-modal-overlay" onClick={closeEditModal}>
+          <div className="modern-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="modern-modal-header">
+              <h2>Edit Inmate Information</h2>
+              <button className="modern-modal-close" onClick={closeEditModal}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            <div className="modern-modal-body" style={{ padding: '24px' }}>
+              <form onSubmit={handleEditSubmit}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>
+                      Inmate Number *
+                    </label>
+                    <input
+                      type="text"
+                      name="inmateNumber"
+                      value={editFormData.inmateNumber}
+                      onChange={handleEditChange}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>
+                      First Name *
+                    </label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={editFormData.firstName}
+                      onChange={handleEditChange}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>
+                      Last Name *
+                    </label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={editFormData.lastName}
+                      onChange={handleEditChange}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>
+                      Middle Name
+                    </label>
+                    <input
+                      type="text"
+                      name="middleName"
+                      value={editFormData.middleName}
+                      onChange={handleEditChange}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>
+                      Security Category
+                    </label>
+                    <select
+                      name="secCategory"
+                      value={editFormData.secCategory}
+                      onChange={handleEditChange}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                    >
+                      <option value="">Select Category</option>
+                      <option value="Maximum">Maximum</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Minimum">Minimum</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>
+                      Date of Birth
+                    </label>
+                    <input
+                      type="date"
+                      name="dateOfBirth"
+                      value={editFormData.dateOfBirth}
+                      onChange={handleEditChange}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {editError && (
+                  <div style={{
+                    marginTop: '16px',
+                    padding: '12px',
+                    background: '#fef2f2',
+                    border: '1px solid #fecaca',
+                    borderRadius: '8px',
+                    color: '#dc2626',
+                    fontSize: '14px'
+                  }}>
+                    {editError}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '12px', marginTop: '24px', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={closeEditModal}
+                    disabled={editLoading}
+                    style={{
+                      padding: '10px 20px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: editLoading ? 'not-allowed' : 'pointer',
+                      background: '#f8fafc',
+                      color: '#475569',
+                      opacity: editLoading ? 0.6 : 1
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={editLoading}
+                    style={{
+                      padding: '10px 20px',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: editLoading ? 'not-allowed' : 'pointer',
+                      background: editLoading ? '#9ca3af' : '#3b82f6',
+                      color: 'white',
+                      opacity: editLoading ? 0.8 : 1
+                    }}
+                  >
+                    {editLoading ? 'Updating...' : 'Update Inmate'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
