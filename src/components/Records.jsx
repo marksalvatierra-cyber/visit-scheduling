@@ -770,9 +770,23 @@ setFilteredInmates(sortedInmates);
       {/* Edit Modal */}
       {showEditModal && (
         <div className="modern-modal-overlay" onClick={closeEditModal}>
-          <div className="modern-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
-            <div className="modern-modal-header">
-              <h2>Edit Inmate Information</h2>
+          <div 
+            className="modern-modal-content" 
+            onClick={(e) => e.stopPropagation()} 
+            style={{ 
+              maxWidth: '600px', 
+              background: 'white',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+            }}
+          >
+            <div className="modern-modal-header" style={{ 
+              background: 'white',
+              borderBottom: '1px solid #f1f5f9',
+              padding: '20px 24px'
+            }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>Edit Inmate Information</h2>
               <button className="modern-modal-close" onClick={closeEditModal}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -781,11 +795,11 @@ setFilteredInmates(sortedInmates);
               </button>
             </div>
 
-            <div className="modern-modal-body" style={{ padding: '24px' }}>
+            <div className="modern-modal-body" style={{ padding: '24px', background: 'white' }}>
               <form onSubmit={handleEditSubmit}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: '#475569' }}>
                       Inmate Number *
                     </label>
                     <input
@@ -799,13 +813,17 @@ setFilteredInmates(sortedInmates);
                         padding: '10px 12px',
                         border: '1px solid #e2e8f0',
                         borderRadius: '8px',
-                        fontSize: '14px'
+                        fontSize: '14px',
+                        outline: 'none',
+                        transition: 'all 0.2s ease'
                       }}
+                      onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                     />
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: '#475569' }}>
                       First Name *
                     </label>
                     <input
@@ -819,13 +837,17 @@ setFilteredInmates(sortedInmates);
                         padding: '10px 12px',
                         border: '1px solid #e2e8f0',
                         borderRadius: '8px',
-                        fontSize: '14px'
+                        fontSize: '14px',
+                        outline: 'none',
+                        transition: 'all 0.2s ease'
                       }}
+                      onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                     />
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: '#475569' }}>
                       Last Name *
                     </label>
                     <input
@@ -839,13 +861,17 @@ setFilteredInmates(sortedInmates);
                         padding: '10px 12px',
                         border: '1px solid #e2e8f0',
                         borderRadius: '8px',
-                        fontSize: '14px'
+                        fontSize: '14px',
+                        outline: 'none',
+                        transition: 'all 0.2s ease'
                       }}
+                      onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                     />
                   </div>
 
                   <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: '#475569' }}>
                       Middle Name
                     </label>
                     <input
@@ -858,13 +884,17 @@ setFilteredInmates(sortedInmates);
                         padding: '10px 12px',
                         border: '1px solid #e2e8f0',
                         borderRadius: '8px',
-                        fontSize: '14px'
+                        fontSize: '14px',
+                        outline: 'none',
+                        transition: 'all 0.2s ease'
                       }}
+                      onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                     />
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: '#475569' }}>
                       Security Category
                     </label>
                     <select
@@ -876,8 +906,13 @@ setFilteredInmates(sortedInmates);
                         padding: '10px 12px',
                         border: '1px solid #e2e8f0',
                         borderRadius: '8px',
-                        fontSize: '14px'
+                        fontSize: '14px',
+                        outline: 'none',
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer'
                       }}
+                      onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                     >
                       <option value="">Select Category</option>
                       <option value="Maximum">Maximum</option>
@@ -887,7 +922,7 @@ setFilteredInmates(sortedInmates);
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: '#475569' }}>
                       Date of Birth
                     </label>
                     <input
@@ -900,8 +935,13 @@ setFilteredInmates(sortedInmates);
                         padding: '10px 12px',
                         border: '1px solid #e2e8f0',
                         borderRadius: '8px',
-                        fontSize: '14px'
+                        fontSize: '14px',
+                        outline: 'none',
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer'
                       }}
+                      onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                     />
                   </div>
                 </div>
@@ -909,7 +949,7 @@ setFilteredInmates(sortedInmates);
                 {editError && (
                   <div style={{
                     marginTop: '16px',
-                    padding: '12px',
+                    padding: '12px 16px',
                     background: '#fef2f2',
                     border: '1px solid #fecaca',
                     borderRadius: '8px',
@@ -926,16 +966,19 @@ setFilteredInmates(sortedInmates);
                     onClick={closeEditModal}
                     disabled={editLoading}
                     style={{
-                      padding: '10px 20px',
+                      padding: '10px 24px',
                       border: '1px solid #e2e8f0',
                       borderRadius: '8px',
                       fontSize: '14px',
                       fontWeight: '600',
                       cursor: editLoading ? 'not-allowed' : 'pointer',
-                      background: '#f8fafc',
-                      color: '#475569',
-                      opacity: editLoading ? 0.6 : 1
+                      background: '#ffffff',
+                      color: '#64748b',
+                      opacity: editLoading ? 0.6 : 1,
+                      transition: 'all 0.2s ease'
                     }}
+                    onMouseOver={(e) => !editLoading && (e.target.style.background = '#f8fafc')}
+                    onMouseOut={(e) => !editLoading && (e.target.style.background = '#ffffff')}
                   >
                     Cancel
                   </button>
@@ -943,7 +986,7 @@ setFilteredInmates(sortedInmates);
                     type="submit"
                     disabled={editLoading}
                     style={{
-                      padding: '10px 20px',
+                      padding: '10px 24px',
                       border: 'none',
                       borderRadius: '8px',
                       fontSize: '14px',
@@ -951,8 +994,12 @@ setFilteredInmates(sortedInmates);
                       cursor: editLoading ? 'not-allowed' : 'pointer',
                       background: editLoading ? '#9ca3af' : '#3b82f6',
                       color: 'white',
-                      opacity: editLoading ? 0.8 : 1
+                      opacity: editLoading ? 0.8 : 1,
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
                     }}
+                    onMouseOver={(e) => !editLoading && (e.target.style.background = '#2563eb')}
+                    onMouseOut={(e) => !editLoading && (e.target.style.background = '#3b82f6')}
                   >
                     {editLoading ? 'Updating...' : 'Update Inmate'}
                   </button>
