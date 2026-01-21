@@ -19,6 +19,7 @@ const PastRecords = () => {
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [timeError, setTimeError] = useState('');
   const [inmates, setInmates] = useState([]);
   const [officers, setOfficers] = useState([]);
   const [visitors, setVisitors] = useState([]);
@@ -81,6 +82,11 @@ const PastRecords = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Clear time error when user changes time
+    if (name === 'visitTime' && timeError) {
+      setTimeError('');
+    }
     
     // If visitor name is selected, auto-fill email
     if (name === 'clientName') {
@@ -428,15 +434,46 @@ const PastRecords = () => {
                 name="visitTime"
                 value={formData.visitTime}
                 onChange={handleInputChange}
+                min="07:00"
+                max="15:00"
+                step="900"
                 required
+                onBlur={(e) => {
+                  const value = e.target.value;
+                  if (value) {
+                    const [hours, minutes] = value.split(':').map(Number);
+                    const timeInMinutes = hours * 60 + minutes;
+                    if (timeInMinutes < 420 || timeInMinutes > 900) {
+                      setTimeError('Visit time must be between 7:00 AM and 3:00 PM');
+                      setFormData((prev) => ({ ...prev, visitTime: '' }));
+                    }
+                  }
+                }}
                 style={{
                   width: '100%',
                   padding: '10px 12px',
-                  border: '1px solid #d1d5db',
+                  border: timeError ? '1px solid #ef4444' : '1px solid #d1d5db',
                   borderRadius: '6px',
                   fontSize: '14px'
                 }}
               />
+              {timeError && (
+                <div style={{
+                  color: '#ef4444',
+                  fontSize: '13px',
+                  marginTop: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  {timeError}
+                </div>
+              )}
             </div>
 
             <div>
