@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import firebaseService from '../firebase-services.js';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
 import './Settings.css';
 import './shared.css';
 
@@ -159,7 +161,7 @@ const PastRecords = () => {
         isPastRecord: true,
         notes: formData.notes,
         submittedAt: requestDate.toISOString(),
-        createdAt: requestDate,
+        createdAt: firebase.firestore.Timestamp.fromDate(requestDate),
         updatedAt: new Date()
       };
 
