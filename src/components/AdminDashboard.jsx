@@ -77,7 +77,7 @@ const AdminDashboard = () => {
     }
     return { labels: weekLabels, data: weeks };
   };
-  // Helper to group daily data into months (for last 3 months)
+  // Helper to group daily data into months (for last 5 months)
   const groupDataByMonths = (labels, data) => {
     const months = [];
     const monthLabels = [];
@@ -186,7 +186,7 @@ const refreshDashboardData = useCallback(async () => {
           result = await firebaseService.getRequestStatsByDays(30);
           setChartData(groupDataByWeeks(result.labels, result.data));
         } else if (chartMode === 'monthly') {
-          result = await firebaseService.getRequestStatsByDays(90);
+          result = await firebaseService.getRequestStatsByDays(150);
           setChartData(groupDataByMonths(result.labels, result.data));
         } else {
           result = await firebaseService.getRequestStatsByDays(parseInt(chartPeriod));
@@ -669,7 +669,7 @@ console.log('📊 Current chart data being rendered:', {
       const daysCount = (series.data || []).length || 0;
       const avg90 = daysCount ? (total90 / daysCount).toFixed(2) : '0';
 
-      csv += 'LAST 3 MONTHS (90 DAYS) - SUMMARY\\n';
+      csv += 'LAST 5 MONTHS (150 DAYS) - SUMMARY\\n';
       csv += 'Metric,Value\\n';
       csv += `Total Requests (90 days),${total90}\\n`;
       csv += `Average per day,${avg90}\\n\\n`;
@@ -685,7 +685,7 @@ console.log('📊 Current chart data being rendered:', {
     }
 
     if (data.timeSeries?.last90) {
-      csv += 'LAST 3 MONTHS (90 DAYS, DAILY)\n';
+      csv += 'LAST 5 MONTHS (150 DAYS, DAILY)\n';
       csv += 'Date,Requests\n';
       data.timeSeries.last90.labels.forEach((label, i) => {
         csv += `${label},${data.timeSeries.last90.data[i] ?? 0}\n`;
@@ -1365,7 +1365,7 @@ const markAllNotificationsRead = async () => {
                         >
                           <option value="7">Last 7 days</option>
                           <option value="weekly">Last 30 days</option>
-                          <option value="monthly">Last 3 months</option>
+                          <option value="monthly">Last 5 months</option>
                         </select>
                         <div className="chart-menu-wrapper">
                           <button 
