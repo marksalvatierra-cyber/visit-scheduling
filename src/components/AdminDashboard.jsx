@@ -46,6 +46,7 @@ const AdminDashboard = () => {
     pending: 0,
     rescheduled: 0,
     rejected: 0,
+    cancelled: 0,
     total: 0
   });
   const [inmateStats, setInmateStats] = useState({
@@ -360,15 +361,16 @@ console.log('📊 Current chart data being rendered:', {
 
   // Chart data for Request Categories
   const categoriesChartData = {
-    labels: ['Approved', 'Pending', 'Reschedule', 'Rejected'],
+    labels: ['Approved', 'Pending', 'Reschedule', 'Rejected', 'Cancelled'],
     datasets: [{
       label: 'Requests',
-      data: [dashboardStats.approved, dashboardStats.pending, dashboardStats.rescheduled, dashboardStats.rejected],
+      data: [dashboardStats.approved, dashboardStats.pending, dashboardStats.rescheduled, dashboardStats.rejected, dashboardStats.cancelled],
       backgroundColor: [
         '#10b981',
         '#f59e0b',
         '#8b5cf6',
-        '#ef4444'
+        '#ef4444',
+        '#6b7280'
       ],
       borderRadius: 8,
       barPercentage: 0.7,
@@ -536,6 +538,7 @@ console.log('📊 Current chart data being rendered:', {
         csv += `Pending,${dashboardStats.pending}\n`;
         csv += `Rescheduled,${dashboardStats.rescheduled}\n`;
         csv += `Rejected,${dashboardStats.rejected}\n`;
+        csv += `Cancelled,${dashboardStats.cancelled}\n`;
         const filename = `request-categories-${new Date().toISOString().split('T')[0]}.csv`;
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');

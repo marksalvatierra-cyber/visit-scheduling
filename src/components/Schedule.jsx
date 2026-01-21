@@ -92,6 +92,7 @@ const Schedule = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [timeError, setTimeError] = useState('');
   const [toast, setToast] = useState({ message: '', type: '', isVisible: false });
   const [validatingInmate, setValidatingInmate] = useState(false);
   const [inmateValidation, setInmateValidation] = useState({ isValid: null, inmateName: '', status: '' });
@@ -166,6 +167,7 @@ const Schedule = () => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
     if (error) setError('');
+    if (name === 'visitTime' && timeError) setTimeError('');
     
     // Validate inmate number when it changes
     if (name === 'inmateNumber' && inmates.length > 0) {
@@ -315,19 +317,48 @@ const Schedule = () => {
                       <circle cx="12" cy="12" r="10"></circle>
                       <polyline points="12,6 12,12 16,14"></polyline>
                     </svg>
-                    Preferred Time *
+                    Preferred Time (7:00 AM - 3:00 PM) *
                   </label>
                   <input
                     type="time"
-                    className="form-input"
+                    className={`form-input ${timeError ? 'invalid' : ''}`}
                     id="visitTime"
                     name="visitTime"
                     value={form.visitTime}
                     onChange={handleChange}
                     min="07:00"
                     max="15:00"
+                    step="900"
                     required
+                    onBlur={(e) => {
+                      const value = e.target.value;
+                      if (value) {
+                        const [hours, minutes] = value.split(':').map(Number);
+                        const timeInMinutes = hours * 60 + minutes;
+                        if (timeInMinutes < 420 || timeInMinutes > 900) {
+                          setTimeError('Visit time must be between 7:00 AM and 3:00 PM');
+                          setForm((prev) => ({ ...prev, visitTime: '' }));
+                        }
+                      }
+                    }}
                   />
+                  {timeError && (
+                    <div style={{
+                      color: '#ef4444',
+                      fontSize: '13px',
+                      marginTop: '6px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                      </svg>
+                      {timeError}
+                    </div>
+                  )}
                 </div>
               </div>
 

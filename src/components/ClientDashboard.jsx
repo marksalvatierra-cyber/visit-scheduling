@@ -37,6 +37,7 @@ const ClientDashboard = () => {
     pending: 0,
     rescheduled: 0,
     rejected: 0,
+    cancelled: 0,
     total: 0
   });
   const [weeklyData, setWeeklyData] = useState([0, 0, 0, 0, 0, 0, 0]);
@@ -78,6 +79,7 @@ const ClientDashboard = () => {
         pending: stats.pending || 0,
         rescheduled: stats.rescheduled || 0,
         rejected: stats.rejected || 0,
+        cancelled: stats.cancelled || 0,
         total: stats.total || 0
       });
 
@@ -146,15 +148,16 @@ const ClientDashboard = () => {
   };
 
   const categoriesChartData = {
-    labels: ['Approved', 'Pending', 'Rescheduled', 'Rejected'],
+    labels: ['Approved', 'Pending', 'Rescheduled', 'Rejected', 'Cancelled'],
     datasets: [{
       label: 'Visit Requests',
-      data: [dashboardStats.approved, dashboardStats.pending, dashboardStats.rescheduled, dashboardStats.rejected],
+      data: [dashboardStats.approved, dashboardStats.pending, dashboardStats.rescheduled, dashboardStats.rejected, dashboardStats.cancelled],
       backgroundColor: [
         '#10b981',
         '#f59e0b',
         '#8b5cf6',
-        '#ef4444'
+        '#ef4444',
+        '#6b7280'
       ],
       borderRadius: 8,
       barPercentage: 0.7,

@@ -496,8 +496,8 @@ setFilteredInmates(sortedInmates);
 
                   <div className="modern-modal-grid modern-modal-grid-2" style={{ gap: '16px' }}>
                     <div className="modern-modal-info-card" style={{ padding: '20px' }}>
-                      <div className="modern-modal-info-label">Cell Number</div>
-                      <div className="modern-modal-info-value" style={{ marginTop: '8px' }}>{selectedInmate.cellNumber || 'N/A'}</div>
+                      <div className="modern-modal-info-label">Security Category</div>
+                      <div className="modern-modal-info-value" style={{ marginTop: '8px' }}>{selectedInmate.securityCategory || 'N/A'}</div>
                     </div>
                     <div className="modern-modal-info-card" style={{ padding: '20px' }}>
                       <div className="modern-modal-info-label">Date of Birth</div>
@@ -588,7 +588,8 @@ setFilteredInmates(sortedInmates);
                     <div className="modern-modal-info-card">
                       <div className="modern-modal-section-title" style={{ fontSize: '14px', marginBottom: '12px' }}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <polyline points="12,6 12,12 16,14"></polyline>
                         </svg>
                         Past Visits
                       </div>

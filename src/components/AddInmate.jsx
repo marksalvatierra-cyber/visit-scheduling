@@ -8,7 +8,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 const AddInmate = () => {
   const [formData, setFormData] = useState({
     inmateNumber: '',
-    cellNumber: '',
+    securityCategory: '',
     firstName: '',
     lastName: '',
     middleName: '',
@@ -210,7 +210,7 @@ const AddInmate = () => {
     
     try {
       // Validate required fields
-      if (!formData.inmateNumber || !formData.cellNumber || !formData.firstName || !formData.lastName || !formData.dateOfBirth) {
+      if (!formData.inmateNumber || !formData.securityCategory || !formData.firstName || !formData.lastName || !formData.dateOfBirth) {
         throw new Error('Please fill in all required fields');
       }
 
@@ -240,7 +240,7 @@ const AddInmate = () => {
     setShowSuccessModal(true);
     setFormData({
       inmateNumber: '',
-      cellNumber: '',
+      securityCategory: '',
       firstName: '',
       lastName: '',
       middleName: '',
@@ -710,18 +710,21 @@ const AddInmate = () => {
                 </div>
                 
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Cell Number</label>
-                  <input
-                    type="text"
-                    name="cellNumber"
+                  <label style={styles.label}>Security Category</label>
+                  <select
+                    name="securityCategory"
                     style={styles.input}
-                    placeholder="Enter cell number"
-                    value={formData.cellNumber}
+                    value={formData.securityCategory}
                     onChange={handleInputChange}
                     onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
                     onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                     required
-                  />
+                  >
+                    <option value="">Select security category</option>
+                    <option value="Minimum">Minimum</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Maximum">Maximum</option>
+                  </select>
                 </div>
                 
                 <div style={styles.formGroup}>
@@ -995,8 +998,8 @@ const AddInmate = () => {
                 <div style={styles.infoValue}>{addedInmate.inmateNumber}</div>
               </div>
               <div style={styles.infoCard}>
-                <div style={styles.infoLabel}>Cell Number</div>
-                <div style={styles.infoValue}>{addedInmate.cellNumber}</div>
+                <div style={styles.infoLabel}>Security Category</div>
+                <div style={styles.infoValue}>{addedInmate.securityCategory}</div>
               </div>
               <div style={styles.infoCard}>
                 <div style={styles.infoLabel}>Date of Birth</div>

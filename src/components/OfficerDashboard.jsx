@@ -24,6 +24,7 @@ const OfficerDashboard = () => {
     pending: 0,
     rescheduled: 0,
     rejected: 0,
+    cancelled: 0,
     total: 0
   });
 
@@ -64,15 +65,16 @@ const OfficerDashboard = () => {
       const pending = officerRequests.filter(req => req.status === 'pending').length;
       const rescheduled = officerRequests.filter(req => req.status === 'rescheduled' || req.status === 'reschedule').length;
       const rejected = officerRequests.filter(req => req.status === 'rejected').length;
+      const cancelled = officerRequests.filter(req => req.status === 'cancelled').length;
       const total = officerRequests.length;
       
-      console.log('🔍 Officer dashboard stats:', { approved, pending, rescheduled, rejected, total });
+      console.log('🔍 Officer dashboard stats:', { approved, pending, rescheduled, rejected, cancelled, total });
       
-      return { approved, pending, rescheduled, rejected, total };
+      return { approved, pending, rescheduled, rejected, cancelled, total };
     } catch (error) {
       console.error('Error loading officer dashboard stats:', error);
       // Return default stats on error
-      return { approved: 0, pending: 0, rescheduled: 0, rejected: 0, total: 0 };
+      return { approved: 0, pending: 0, rescheduled: 0, rejected: 0, cancelled: 0, total: 0 };
     }
   };
 

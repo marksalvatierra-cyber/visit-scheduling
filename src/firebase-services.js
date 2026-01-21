@@ -825,6 +825,7 @@ async sendPasswordReset(email) {
                 pending: 0,
                 rejected: 0,
                 rescheduled: 0,
+                cancelled: 0,
                 completed: 0
             };
             
@@ -848,7 +849,7 @@ async sendPasswordReset(email) {
             return stats;
         } catch (error) {
             console.error('Error getting dashboard stats:', error);
-            return { total: 0, approved: 0, pending: 0, rejected: 0, rescheduled: 0, completed: 0 };
+            return { total: 0, approved: 0, pending: 0, rejected: 0, rescheduled: 0, cancelled: 0, completed: 0 };
         }
     }
 
