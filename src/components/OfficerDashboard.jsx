@@ -172,6 +172,19 @@ const OfficerDashboard = () => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
+  // Listen to admin notifications (officers receive admin notifications)
+  useEffect(() => {
+    const unsubscribe = firebaseService.listenToAdminNotifications((newNotifications) => {
+      setNotifications(newNotifications);
+    });
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, []);
+
   const handleSignOut = async () => {
     try {
       console.log('Sign out successful');

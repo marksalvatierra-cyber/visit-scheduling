@@ -3,6 +3,7 @@ import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Filler } from 'chart.js/auto';
 import { Line, Bar } from 'react-chartjs-2';
+import { Document, Packer, Paragraph, TextRun, Table, TableCell, TableRow, HeadingLevel, AlignmentType, WidthType, BorderStyle } from 'docx';
 import firebaseService from '../firebase-services.js';
 import VisitRequests from './VisitRequests';
 import Scan from './Scan';
@@ -605,15 +606,15 @@ console.log('📊 Current chart data being rendered:', {
         recentActivity: recentActivity.slice(0, 10) // Last 10 activities
       };
 
-      // Generate CSV content
-      const csvContent = generateCSVReport(reportData);
+      // Generate Word document
+      const doc = await generateWordReport(reportData);
       
       // Create and download the file
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const blob = await Packer.toBlob(doc);
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
-      link.setAttribute('download', `corrections-report-${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute('download', `corrections-report-${new Date().toISOString().split('T')[0]}.docx`);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
@@ -630,82 +631,154 @@ console.log('📊 Current chart data being rendered:', {
     }
   };
 
-  // Helper function to generate CSV content
-  const generateCSVReport = (data) => {
-  let csv = 'Central Prison Camp Sablayan Penal Farm - System Report\n';
-    csv += `Generated: ${data.generatedAt}\n`;
-    csv += `Period: ${data.period}\n\n`;
-    
-    // Summary Section
-    csv += 'SUMMARY STATISTICS\n';
-    csv += 'Metric,Value\n';
-    csv += `Total Requests,${data.summary.totalRequests}\n`;
-    csv += `Approved,${data.summary.approved}\n`;
-    csv += `Pending,${data.summary.pending}\n`;
-    csv += `Rescheduled,${data.summary.rescheduled}\n`;
-    csv += `Rejected,${data.summary.rejected}\n`;
-    csv += `Approval Rate,${data.summary.approvalRate}%\n\n`;
-    
-    // Inmate Statistics
-    csv += 'INMATE STATISTICS\n';
-    csv += 'Metric,Value\n';
-    csv += `Total Inmates,${data.inmates.total}\n`;
-    csv += `Active,${data.inmates.active}\n`;
-    csv += `Inactive,${data.inmates.inactive}\n\n`;
-    
-    // Weekly Data
-    csv += 'WEEKLY REQUEST DATA\n';
-    csv += 'Day,Requests\n';
+  // Helper function to generate Word document
+  const generateWordReport = async (data) => {
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    data.weeklyData.forEach((count, index) => {
-      csv += `${days[index]},${count}\n`;
+
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: [
+            // Title
+            new Paragraph({
+              text: 'Central Prison Camp Sablayan Penal Farm',
+              heading: HeadingLevel.TITLE,
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 200 },
+            }),
+            new Paragraph({
+              text: 'System Report',
+              heading: HeadingLevel.HEADING_1,
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 400 },
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: 'Generated: ', bold: true }),
+                new TextRun(data.generatedAt),
+              ],
+              spacing: { after: 100 },
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: 'Period: ', bold: true }),
+                new TextRun(data.period),
+              ],
+              spacing: { after: 400 },
+            }),
+
+            // Summary Statistics Section
+            new Paragraph({
+              text: 'SUMMARY STATISTICS',
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 300, after: 200 },
+            }),
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: [
+                new TableRow({
+                  children: [
+                    new TableCell({ children: [new Paragraph({ text: 'Metric', bold: true })], shading: { fill: 'CCCCCC' } }),
+                    new TableCell({ children: [new Paragraph({ text: 'Value', bold: true })], shading: { fill: 'CCCCCC' } }),
+                  ],
+                }),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('Total Requests')] }), new TableCell({ children: [new Paragraph(String(data.summary.totalRequests))] })]}),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('Approved')] }), new TableCell({ children: [new Paragraph(String(data.summary.approved))] })]}),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('Pending')] }), new TableCell({ children: [new Paragraph(String(data.summary.pending))] })]}),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('Rescheduled')] }), new TableCell({ children: [new Paragraph(String(data.summary.rescheduled))] })]}),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('Rejected')] }), new TableCell({ children: [new Paragraph(String(data.summary.rejected))] })]}),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('Approval Rate')] }), new TableCell({ children: [new Paragraph(`${data.summary.approvalRate}%`)] })]}),
+              ],
+            }),
+
+            // Inmate Statistics Section
+            new Paragraph({
+              text: 'INMATE STATISTICS',
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 400, after: 200 },
+            }),
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: [
+                new TableRow({
+                  children: [
+                    new TableCell({ children: [new Paragraph({ text: 'Metric', bold: true })], shading: { fill: 'CCCCCC' } }),
+                    new TableCell({ children: [new Paragraph({ text: 'Value', bold: true })], shading: { fill: 'CCCCCC' } }),
+                  ],
+                }),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('Total Inmates')] }), new TableCell({ children: [new Paragraph(String(data.inmates.total))] })]}),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('Active')] }), new TableCell({ children: [new Paragraph(String(data.inmates.active))] })]}),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('Inactive')] }), new TableCell({ children: [new Paragraph(String(data.inmates.inactive))] })]}),
+              ],
+            }),
+
+            // Weekly Request Data
+            new Paragraph({
+              text: 'WEEKLY REQUEST DATA',
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 400, after: 200 },
+            }),
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: [
+                new TableRow({
+                  children: [
+                    new TableCell({ children: [new Paragraph({ text: 'Day', bold: true })], shading: { fill: 'CCCCCC' } }),
+                    new TableCell({ children: [new Paragraph({ text: 'Requests', bold: true })], shading: { fill: 'CCCCCC' } }),
+                  ],
+                }),
+                ...data.weeklyData.map((count, index) => 
+                  new TableRow({
+                    children: [
+                      new TableCell({ children: [new Paragraph(days[index])] }),
+                      new TableCell({ children: [new Paragraph(String(count))] }),
+                    ],
+                  })
+                ),
+              ],
+            }),
+
+            // Recent Activity Section
+            ...(data.recentActivity.length > 0 ? [
+              new Paragraph({
+                text: 'RECENT ACTIVITY',
+                heading: HeadingLevel.HEADING_2,
+                spacing: { before: 400, after: 200 },
+              }),
+              new Table({
+                width: { size: 100, type: WidthType.PERCENTAGE },
+                rows: [
+                  new TableRow({
+                    children: [
+                      new TableCell({ children: [new Paragraph({ text: 'Type', bold: true })], shading: { fill: 'CCCCCC' } }),
+                      new TableCell({ children: [new Paragraph({ text: 'Title', bold: true })], shading: { fill: 'CCCCCC' } }),
+                      new TableCell({ children: [new Paragraph({ text: 'Description', bold: true })], shading: { fill: 'CCCCCC' } }),
+                      new TableCell({ children: [new Paragraph({ text: 'Timestamp', bold: true })], shading: { fill: 'CCCCCC' } }),
+                    ],
+                  }),
+                  ...data.recentActivity.map(activity => {
+                    const timestamp = activity.timestamp ? 
+                      (activity.timestamp.toDate ? activity.timestamp.toDate().toLocaleString() : activity.timestamp) : 
+                      'Unknown';
+                    return new TableRow({
+                      children: [
+                        new TableCell({ children: [new Paragraph(activity.type || 'N/A')] }),
+                        new TableCell({ children: [new Paragraph(activity.title || 'N/A')] }),
+                        new TableCell({ children: [new Paragraph(activity.description || 'N/A')] }),
+                        new TableCell({ children: [new Paragraph(timestamp)] }),
+                      ],
+                    });
+                  }),
+                ],
+              }),
+            ] : []),
+          ],
+        },
+      ],
     });
-    csv += '\n';
 
-    // Time Series: Last 7, 30, and 90 days
-    if (data.timeSeries?.last90) {
-      const series = data.timeSeries.last90;
-      const total90 = (series.data || []).reduce((sum, val) => sum + (Number(val) || 0), 0);
-      const daysCount = (series.data || []).length || 0;
-      const avg90 = daysCount ? (total90 / daysCount).toFixed(2) : '0';
-
-      csv += 'LAST 5 MONTHS (150 DAYS) - SUMMARY\\n';
-      csv += 'Metric,Value\\n';
-      csv += `Total Requests (90 days),${total90}\\n`;
-      csv += `Average per day,${avg90}\\n\\n`;
-    }
-
-    if (data.timeSeries?.last30) {
-      csv += 'LAST 30 DAYS (DAILY)\n';
-      csv += 'Date,Requests\n';
-      data.timeSeries.last30.labels.forEach((label, i) => {
-        csv += `${label},${data.timeSeries.last30.data[i] ?? 0}\n`;
-      });
-      csv += '\n';
-    }
-
-    if (data.timeSeries?.last90) {
-      csv += 'LAST 5 MONTHS (150 DAYS, DAILY)\n';
-      csv += 'Date,Requests\n';
-      data.timeSeries.last90.labels.forEach((label, i) => {
-        csv += `${label},${data.timeSeries.last90.data[i] ?? 0}\n`;
-      });
-      csv += '\n';
-    }
-    
-    // Recent Activity
-    if (data.recentActivity.length > 0) {
-      csv += 'RECENT ACTIVITY\n';
-      csv += 'Type,Title,Description,Timestamp\n';
-      data.recentActivity.forEach(activity => {
-        const timestamp = activity.timestamp ? 
-          (activity.timestamp.toDate ? activity.timestamp.toDate().toLocaleString() : activity.timestamp) : 
-          'Unknown';
-        csv += `"${activity.type || 'N/A'}","${activity.title || 'N/A'}","${activity.description || 'N/A'}","${timestamp}"\n`;
-      });
-    }
-    
-    return csv;
+    return doc;
   };
 
   const getTooltipText = (tooltipId) => {
