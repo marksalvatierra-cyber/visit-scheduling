@@ -181,10 +181,10 @@ const Schedule = () => {
     
     const relationshipLower = relationship.toLowerCase();
     const isFriend = relationshipLower.includes('friend');
-    const isRelative = relationshipLower.includes('spouse') || 
+    const isConjugal = relationshipLower.includes('spouse') || 
                        relationshipLower.includes('wife') || 
-                       relationshipLower.includes('husband') || 
-                       relationshipLower.includes('brother') || 
+                       relationshipLower.includes('husband');
+    const isRelative = relationshipLower.includes('brother') || 
                        relationshipLower.includes('sister') || 
                        relationshipLower.includes('mother') || 
                        relationshipLower.includes('father') || 
@@ -201,10 +201,12 @@ const Schedule = () => {
                        relationshipLower.includes('grandson') ||
                        relationshipLower.includes('granddaughter');
 
-    if (isFriend && !isRelative) {
+    if (isFriend && !isRelative && !isConjugal) {
       return { days: 'Wednesday', type: 'friend', color: '#0ea5e9' };
+    } else if (isConjugal) {
+      return { days: 'Saturday & Sunday', type: 'conjugal', color: '#a855f7' };
     } else if (isRelative) {
-      return { days: 'Thursday - Sunday', type: 'relative', color: '#10b981' };
+      return { days: 'Thursday - Friday', type: 'relative', color: '#10b981' };
     }
     return null;
   };
@@ -239,12 +241,12 @@ const Schedule = () => {
     const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
     const relationshipLower = form.relationship.toLowerCase();
     
-    // Check if relationship indicates friend or relative
+    // Check if relationship indicates friend, relative, or conjugal
     const isFriend = relationshipLower.includes('friend');
-    const isRelative = relationshipLower.includes('spouse') || 
+    const isConjugal = relationshipLower.includes('spouse') || 
                        relationshipLower.includes('wife') || 
-                       relationshipLower.includes('husband') || 
-                       relationshipLower.includes('brother') || 
+                       relationshipLower.includes('husband');
+    const isRelative = relationshipLower.includes('brother') || 
                        relationshipLower.includes('sister') || 
                        relationshipLower.includes('mother') || 
                        relationshipLower.includes('father') || 
@@ -269,24 +271,36 @@ const Schedule = () => {
 
     // Wednesday (3) - Friends only
     if (dayOfWeek === 3) {
-      if (!isFriend && !isRelative) {
-        setError('Wednesday is for friends only. Please specify "Friend" as your relationship or choose Thursday-Sunday for relatives.');
+      if (!isFriend && !isRelative && !isConjugal) {
+        setError('Wednesday is for friends only. Please specify "Friend" as your relationship or choose another day for relatives/conjugal visits.');
         return;
       }
-      if (isRelative && !isFriend) {
-        setError('Wednesday is designated for friends only. Relatives can visit Thursday to Sunday.');
+      if ((isRelative || isConjugal) && !isFriend) {
+        setError('Wednesday is designated for friends only. Relatives can visit Thursday-Friday, and conjugal visits are on Saturday-Sunday.');
         return;
       }
     }
 
-    // Thursday (4) - Sunday (0) - Relatives only
-    if (dayOfWeek === 4 || dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0) {
+    // Thursday (4) - Friday (5) - Relatives only (non-conjugal)
+    if (dayOfWeek === 4 || dayOfWeek === 5) {
       if (isFriend && !isRelative) {
-        setError('Thursday through Sunday is for relatives only. Friends can visit on Wednesday.');
+        setError('Thursday and Friday are for relatives only. Friends can visit on Wednesday.');
         return;
       }
-      if (!isRelative && !isFriend) {
-        setError('Thursday through Sunday is for relatives only. Please specify your relationship (e.g., spouse, parent, sibling).');
+      if (isConjugal) {
+        setError('Thursday and Friday are for relatives only. Conjugal visits are allowed on Saturday and Sunday.');
+        return;
+      }
+      if (!isRelative && !isFriend && !isConjugal) {
+        setError('Thursday and Friday are for relatives only. Please specify your relationship (e.g., parent, sibling).');
+        return;
+      }
+    }
+
+    // Saturday (6) and Sunday (0) - Conjugal visits only
+    if (dayOfWeek === 6 || dayOfWeek === 0) {
+      if (!isConjugal) {
+        setError('Saturday and Sunday are for conjugal visits only. Please specify your relationship as "Spouse", "Wife", or "Husband". Friends can visit on Wednesday, and other relatives can visit Thursday-Friday.');
         return;
       }
     }
@@ -496,11 +510,13 @@ const Schedule = () => {
                     <div style={{
                       marginTop: '8px',
                       padding: '8px 12px',
-                      backgroundColor: getAllowedVisitDays(form.relationship).type === 'friend' ? '#f0f9ff' : '#f0fdf4',
+                      backgroundColor: getAllowedVisitDays(form.relationship).type === 'friend' ? '#f0f9ff' : 
+                                       getAllowedVisitDays(form.relationship).type === 'conjugal' ? '#faf5ff' : '#f0fdf4',
                       border: `1px solid ${getAllowedVisitDays(form.relationship).color}`,
                       borderRadius: '6px',
                       fontSize: '13px',
-                      color: getAllowedVisitDays(form.relationship).type === 'friend' ? '#0369a1' : '#15803d',
+                      color: getAllowedVisitDays(form.relationship).type === 'friend' ? '#0369a1' : 
+                             getAllowedVisitDays(form.relationship).type === 'conjugal' ? '#6b21a8' : '#15803d',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px'
@@ -511,6 +527,8 @@ const Schedule = () => {
                       </svg>
                       {getAllowedVisitDays(form.relationship).type === 'friend' ? 
                         `As a friend, you can visit on ${getAllowedVisitDays(form.relationship).days}` :
+                        getAllowedVisitDays(form.relationship).type === 'conjugal' ?
+                        `For conjugal visits, you can visit on ${getAllowedVisitDays(form.relationship).days}` :
                         `As a relative, you can visit on ${getAllowedVisitDays(form.relationship).days}`
                       }
                     </div>
@@ -718,10 +736,10 @@ const Schedule = () => {
                 <strong>👥 Wednesday:</strong> Friends only
               </div>
               <div style={{ marginBottom: '8px', padding: '8px', backgroundColor: 'white', borderRadius: '6px', border: '1px solid #bae6fd' }}>
-                <strong>👨‍👩‍👧 Thursday - Friday:</strong> Relatives
+                <strong>👨‍👩‍👧 Thursday - Friday:</strong> Relatives (non-conjugal)
               </div>
-              <div style={{ padding: '8px', backgroundColor: '#fef3c7', borderRadius: '6px', color: '#92400e' }}>
-                <strong>💑 Saturday & Sunday:</strong> Relatives & Conjugal visits
+              <div style={{ padding: '8px', backgroundColor: '#fce7f3', borderRadius: '6px', color: '#831843' }}>
+                <strong>💑 Saturday & Sunday:</strong> Conjugal visits only
               </div>
             </div>
           </div>
