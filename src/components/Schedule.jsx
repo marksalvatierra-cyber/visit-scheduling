@@ -175,6 +175,40 @@ const Schedule = () => {
     }
   };
 
+  // Helper function to get allowed visit days based on relationship
+  const getAllowedVisitDays = (relationship) => {
+    if (!relationship.trim()) return null;
+    
+    const relationshipLower = relationship.toLowerCase();
+    const isFriend = relationshipLower.includes('friend');
+    const isRelative = relationshipLower.includes('spouse') || 
+                       relationshipLower.includes('wife') || 
+                       relationshipLower.includes('husband') || 
+                       relationshipLower.includes('brother') || 
+                       relationshipLower.includes('sister') || 
+                       relationshipLower.includes('mother') || 
+                       relationshipLower.includes('father') || 
+                       relationshipLower.includes('son') || 
+                       relationshipLower.includes('daughter') || 
+                       relationshipLower.includes('parent') || 
+                       relationshipLower.includes('child') || 
+                       relationshipLower.includes('sibling') || 
+                       relationshipLower.includes('relative') ||
+                       relationshipLower.includes('aunt') ||
+                       relationshipLower.includes('uncle') ||
+                       relationshipLower.includes('cousin') ||
+                       relationshipLower.includes('grandparent') ||
+                       relationshipLower.includes('grandson') ||
+                       relationshipLower.includes('granddaughter');
+
+    if (isFriend && !isRelative) {
+      return { days: 'Wednesday', type: 'friend', color: '#0ea5e9' };
+    } else if (isRelative) {
+      return { days: 'Thursday - Sunday', type: 'relative', color: '#10b981' };
+    }
+    return null;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     
@@ -199,6 +233,62 @@ const Schedule = () => {
     if (selectedDate < today) {
       setError('Visit date must be in the future.');
       return;
+    }
+
+    // Validate visitation schedule based on day of week and relationship
+    const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    const relationshipLower = form.relationship.toLowerCase();
+    
+    // Check if relationship indicates friend or relative
+    const isFriend = relationshipLower.includes('friend');
+    const isRelative = relationshipLower.includes('spouse') || 
+                       relationshipLower.includes('wife') || 
+                       relationshipLower.includes('husband') || 
+                       relationshipLower.includes('brother') || 
+                       relationshipLower.includes('sister') || 
+                       relationshipLower.includes('mother') || 
+                       relationshipLower.includes('father') || 
+                       relationshipLower.includes('son') || 
+                       relationshipLower.includes('daughter') || 
+                       relationshipLower.includes('parent') || 
+                       relationshipLower.includes('child') || 
+                       relationshipLower.includes('sibling') || 
+                       relationshipLower.includes('relative') ||
+                       relationshipLower.includes('aunt') ||
+                       relationshipLower.includes('uncle') ||
+                       relationshipLower.includes('cousin') ||
+                       relationshipLower.includes('grandparent') ||
+                       relationshipLower.includes('grandson') ||
+                       relationshipLower.includes('granddaughter');
+
+    // Monday (1) and Tuesday (2) - No visits
+    if (dayOfWeek === 1 || dayOfWeek === 2) {
+      setError('No visits are allowed on Mondays and Tuesdays. Please select another day.');
+      return;
+    }
+
+    // Wednesday (3) - Friends only
+    if (dayOfWeek === 3) {
+      if (!isFriend && !isRelative) {
+        setError('Wednesday is for friends only. Please specify "Friend" as your relationship or choose Thursday-Sunday for relatives.');
+        return;
+      }
+      if (isRelative && !isFriend) {
+        setError('Wednesday is designated for friends only. Relatives can visit Thursday to Sunday.');
+        return;
+      }
+    }
+
+    // Thursday (4) - Sunday (0) - Relatives only
+    if (dayOfWeek === 4 || dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0) {
+      if (isFriend && !isRelative) {
+        setError('Thursday through Sunday is for relatives only. Friends can visit on Wednesday.');
+        return;
+      }
+      if (!isRelative && !isFriend) {
+        setError('Thursday through Sunday is for relatives only. Please specify your relationship (e.g., spouse, parent, sibling).');
+        return;
+      }
     }
 
     setShowPreview(true);
@@ -328,7 +418,6 @@ const Schedule = () => {
                     onChange={handleChange}
                     min="07:00"
                     max="15:00"
-                    step="900"
                     required
                     onBlur={(e) => {
                       const value = e.target.value;
@@ -403,6 +492,29 @@ const Schedule = () => {
                     placeholder="e.g., Brother, Friend, Spouse"
                     required
                   />
+                  {form.relationship && getAllowedVisitDays(form.relationship) && (
+                    <div style={{
+                      marginTop: '8px',
+                      padding: '8px 12px',
+                      backgroundColor: getAllowedVisitDays(form.relationship).type === 'friend' ? '#f0f9ff' : '#f0fdf4',
+                      border: `1px solid ${getAllowedVisitDays(form.relationship).color}`,
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      color: getAllowedVisitDays(form.relationship).type === 'friend' ? '#0369a1' : '#15803d',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 16v-4M12 8h.01"></path>
+                      </svg>
+                      {getAllowedVisitDays(form.relationship).type === 'friend' ? 
+                        `As a friend, you can visit on ${getAllowedVisitDays(form.relationship).days}` :
+                        `As a relative, you can visit on ${getAllowedVisitDays(form.relationship).days}`
+                      }
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -540,6 +652,28 @@ const Schedule = () => {
                 />
               </div>
 
+              {error && (
+                <div style={{
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  marginBottom: '16px',
+                  color: '#dc2626',
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                  </svg>
+                  {error}
+                </div>
+              )}
+
               <button type="submit" className="submit-btn" disabled={loading}>
                 {loading ? (
                   <>
@@ -564,6 +698,34 @@ const Schedule = () => {
 
         {/* Info Cards Sidebar */}
         <div className="info-sidebar">
+          <div className="info-card" style={{ backgroundColor: '#f0f9ff', borderLeft: '4px solid #0ea5e9' }}>
+            <div className="info-card-header">
+              <div className="info-icon" style={{ backgroundColor: '#0ea5e9' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+              </div>
+              <h3>Weekly Visitation Schedule</h3>
+            </div>
+            <div style={{ marginTop: '12px', fontSize: '14px', lineHeight: '1.6' }}>
+              <div style={{ marginBottom: '10px', padding: '8px', backgroundColor: '#fee2e2', borderRadius: '6px', color: '#991b1b' }}>
+                <strong>🚫 Monday & Tuesday:</strong> No visits
+              </div>
+              <div style={{ marginBottom: '8px', padding: '8px', backgroundColor: 'white', borderRadius: '6px', border: '1px solid #bae6fd' }}>
+                <strong>👥 Wednesday:</strong> Friends only
+              </div>
+              <div style={{ marginBottom: '8px', padding: '8px', backgroundColor: 'white', borderRadius: '6px', border: '1px solid #bae6fd' }}>
+                <strong>👨‍👩‍👧 Thursday - Friday:</strong> Relatives
+              </div>
+              <div style={{ padding: '8px', backgroundColor: '#fef3c7', borderRadius: '6px', color: '#92400e' }}>
+                <strong>💑 Saturday & Sunday:</strong> Relatives & Conjugal visits
+              </div>
+            </div>
+          </div>
+
           <div className="info-card">
             <div className="info-card-header">
               <div className="info-icon">
