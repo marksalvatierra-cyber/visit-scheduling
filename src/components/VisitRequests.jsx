@@ -21,13 +21,7 @@ const VisitRequests = ({ currentOfficer = null }) => {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
   const [qrCodeData, setQrCodeData] = useState(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
-
-  const officers = [
-    'Joshua M. Santos',
-    'John L. Ramos',
-    'Maria G. Cruz',
-    'Pedro A. Martinez'
-  ];
+  const [officers, setOfficers] = useState([]);
 
   // Read the filter from URL parameters on component mount
   useEffect(() => {
@@ -36,6 +30,32 @@ const VisitRequests = ({ currentOfficer = null }) => {
       setStatusFilter(filterFromUrl);
     }
   }, [searchParams]);
+
+  // Load officers from Firestore
+  useEffect(() => {
+    const loadOfficers = async () => {
+      try {
+        const users = await firebaseService.getAllUsers();
+        const officerUsers = users.filter(user => user.role === 'officer');
+        // Format officer names for dropdown
+        const officerNames = officerUsers.map(officer => {
+          const firstName = officer.firstName || '';
+          const lastName = officer.lastName || '';
+          const middleName = officer.middleName || '';
+          if (middleName) {
+            return `${firstName} ${middleName.charAt(0)}. ${lastName}`.trim();
+          }
+          return `${firstName} ${lastName}`.trim();
+        }).filter(name => name); // Remove empty names
+        setOfficers(officerNames);
+      } catch (error) {
+        console.error('Error loading officers:', error);
+        // Fallback to empty array or show error
+        setOfficers([]);
+      }
+    };
+    loadOfficers();
+  }, []);
 
   // Helper functions for modal
   const getActionTitle = () => {

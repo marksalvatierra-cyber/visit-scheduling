@@ -222,12 +222,18 @@ const AddInmate = () => {
         throw new Error('Inmate number already exists');
       }
 
-      // Add inmate to Firebase
-      const result = await firebaseService.addInmate({
+      // Prepare inmate data
+      const inmateData = {
         ...formData,
         status: 'active',
         createdAt: new Date().toISOString()
-      });
+      };
+
+      // Debug: Log the data being sent
+      console.log('Saving inmate data:', inmateData);
+
+      // Add inmate to Firebase
+      const result = await firebaseService.addInmate(inmateData);
 
       if (result.success) {
     const newInmate = {

@@ -687,12 +687,17 @@ async sendPasswordReset(email) {
 
     async addInmate(inmateData) {
         try {
+            console.log('FirebaseService: Receiving inmate data:', inmateData);
+            
             const docRef = await this.db.collection('inmates').add({
                 ...inmateData,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
+            
+            console.log('FirebaseService: Inmate added successfully with ID:', docRef.id);
             return { success: true, inmateId: docRef.id };
         } catch (error) {
+            console.error('FirebaseService: Error adding inmate:', error);
             return { success: false, error: error.message };
         }
     }

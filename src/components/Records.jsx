@@ -456,7 +456,7 @@ setFilteredInmates(sortedInmates);
           <div className="modern-inmate-details">
             <div className="modern-inmate-detail">
               <span className="modern-detail-label">Sec Category:</span>
-              <span className="modern-detail-value">{inmate.secCategory || 'N/A'}</span>
+              <span className="modern-detail-value">{inmate.securityCategory || 'N/A'}</span>
             </div>
             <div className="modern-inmate-detail">
               <span className="modern-detail-label">Status:</span>
