@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import firebaseService from '../firebase-services';
 import './Schedule.css';
 
@@ -86,6 +87,8 @@ const initialForm = {
 };
 
 const Schedule = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [form, setForm] = useState(initialForm);
   const [showPreview, setShowPreview] = useState(false);
   const [inmates, setInmates] = useState([]);
@@ -96,11 +99,39 @@ const Schedule = () => {
   const [toast, setToast] = useState({ message: '', type: '', isVisible: false });
   const [validatingInmate, setValidatingInmate] = useState(false);
   const [inmateValidation, setInmateValidation] = useState({ isValid: null, inmateName: '', status: '' });
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [originalRequest, setOriginalRequest] = useState(null);
 
   // Load inmates on component mount
   useEffect(() => {
     loadInmates();
   }, []);
+
+  // Load request data if editing
+  useEffect(() => {
+    const requestToEdit = location.state?.requestToEdit;
+    console.log('Location state:', location.state);
+    console.log('Request to edit:', requestToEdit);
+    console.log('Inmates loaded:', inmates.length);
+    
+    if (requestToEdit && inmates.length > 0) {
+      console.log('Pre-filling form with:', requestToEdit);
+      setIsEditMode(true);
+      setOriginalRequest(requestToEdit);
+      setForm({
+        visitDate: requestToEdit.date || requestToEdit.visitDate || '',
+        visitorName: requestToEdit.clientName || '',
+        inmateNumber: requestToEdit.inmateNumber || '',
+        relationship: requestToEdit.relationship || '',
+        visitReason: requestToEdit.reason || '',
+        visitTime: requestToEdit.time || requestToEdit.visitTime || '',
+      });
+      // Validate the inmate number
+      if (requestToEdit.inmateNumber) {
+        validateInmateNumber(requestToEdit.inmateNumber);
+      }
+    }
+  }, [location.state, inmates]);
 
   // Validate inmate number when inmates are loaded and there's an input
   useEffect(() => {
@@ -333,15 +364,40 @@ const Schedule = () => {
         relationship: form.relationship,
         reason: form.visitReason,
         status: 'pending',
-        submittedAt: new Date().toISOString()
+        submittedAt: isEditMode ? originalRequest?.submittedAt : new Date().toISOString(),
+        resubmittedAt: isEditMode ? new Date().toISOString() : null
       };
 
-      const result = await firebaseService.createVisitRequest(visitRequestData);
+      let result;
+      if (isEditMode && originalRequest) {
+        // Update existing request
+        result = await firebaseService.updateVisitRequest(originalRequest.id, {
+          ...visitRequestData,
+          rescheduleReason: originalRequest.rescheduleReason, // Preserve the reschedule reason
+          previousStatus: originalRequest.status // Track previous status
+        });
+      } else {
+        // Create new request
+        result = await firebaseService.createVisitRequest(visitRequestData);
+      }
       
       if (result.success) {
         setShowPreview(false);
         setForm(initialForm);
-        showToast('Visit request submitted successfully! You will receive an email confirmation once reviewed.', 'success');
+        setIsEditMode(false);
+        setOriginalRequest(null);
+        showToast(
+          isEditMode 
+            ? 'Visit request updated and resubmitted successfully! You will receive an email confirmation once reviewed.' 
+            : 'Visit request submitted successfully! You will receive an email confirmation once reviewed.', 
+          'success'
+        );
+        // Redirect back to visit logs after a short delay
+        if (isEditMode) {
+          setTimeout(() => {
+            navigate('/client/visitlogs');
+          }, 2000);
+        }
       } else {
         setError(result.error || 'Failed to submit visit request. Please try again.');
       }
@@ -386,8 +442,21 @@ const Schedule = () => {
         {/* Form Section */}
         <div className="form-section">
           <div className="form-header">
-            <h2>Visit Request Form</h2>
-            <p>Please fill out all required information below</p>
+            <h2>{isEditMode ? 'Edit & Resubmit Visit Request' : 'Visit Request Form'}</h2>
+            <p>{isEditMode ? 'Update your visit details and resubmit for approval' : 'Please fill out all required information below'}</p>
+            {isEditMode && originalRequest?.rescheduleReason && (
+              <div style={{
+                marginTop: '12px',
+                padding: '12px 16px',
+                background: '#fef3c7',
+                border: '1px solid #fbbf24',
+                borderRadius: '8px',
+                fontSize: '14px'
+              }}>
+                <strong style={{ color: '#92400e' }}>Reschedule Reason:</strong>
+                <p style={{ margin: '4px 0 0 0', color: '#78350f' }}>{originalRequest.rescheduleReason}</p>
+              </div>
+            )}
           </div>
           
           <div className="form-content">
