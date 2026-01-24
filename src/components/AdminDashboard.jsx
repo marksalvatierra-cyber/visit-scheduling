@@ -817,6 +817,7 @@ console.log('📊 Current chart data being rendered:', {
     if (path.includes('/scan')) return 'scan';
     if (path.includes('/addadmin')) return 'addadmin';
     if (path.includes('/inmate')) return 'inmate';
+    if (path.includes('/verify')) return 'verify';
     if (path.includes('/records')) return 'records';
     if (path.includes('/pastrecords')) return 'pastrecords';
     if (path.includes('/log')) return 'log';
