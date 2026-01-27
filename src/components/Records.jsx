@@ -35,7 +35,7 @@ const Records = () => {
     lastName: '',
     middleName: '',
     inmateNumber: '',
-    secCategory: '',
+    securityCategory: '',
     dateOfBirth: ''
   });
   const [editError, setEditError] = useState('');
@@ -268,7 +268,7 @@ setFilteredInmates(sortedInmates);
       lastName: inmate.lastName || '',
       middleName: inmate.middleName || '',
       inmateNumber: inmate.inmateNumber || '',
-      secCategory: inmate.secCategory || '',
+      securityCategory: inmate.securityCategory || '',
       dateOfBirth: inmate.dateOfBirth || ''
     });
     setSelectedInmate(inmate);
@@ -283,7 +283,7 @@ setFilteredInmates(sortedInmates);
       lastName: '',
       middleName: '',
       inmateNumber: '',
-      secCategory: '',
+      securityCategory: '',
       dateOfBirth: ''
     });
     setEditError('');
@@ -898,8 +898,8 @@ setFilteredInmates(sortedInmates);
                       Security Category
                     </label>
                     <select
-                      name="secCategory"
-                      value={editFormData.secCategory}
+                      name="securityCategory"
+                      value={editFormData.securityCategory}
                       onChange={handleEditChange}
                       style={{
                         width: '100%',
