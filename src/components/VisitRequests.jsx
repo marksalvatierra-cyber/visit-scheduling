@@ -223,7 +223,8 @@ const VisitRequests = ({ currentOfficer = null }) => {
     const matchesSearch = 
       request.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.inmateName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.clientEmail.toLowerCase().includes(searchTerm.toLowerCase());
+      request.clientEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (request.visitDate && request.visitDate.includes(searchTerm));
     
     const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
     
@@ -579,7 +580,7 @@ const VisitRequests = ({ currentOfficer = null }) => {
             <input
               type="text"
               className="search-input"
-              placeholder="      Search by name, inmate, or email..."
+              placeholder="Search by name, inmate, email, or date (YYYY-MM-DD)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
