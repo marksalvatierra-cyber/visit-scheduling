@@ -637,7 +637,20 @@ const VisitRequests = ({ currentOfficer = null }) => {
                 {/* Visitor Cell */}
                 <div className="visitor-cell">
                   <div className="visitor-avatar">
-                    {getInitials(request.clientName)}
+                    {request.userProfilePicture ? (
+                      <img 
+                        src={request.userProfilePicture} 
+                        alt={request.clientName}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          borderRadius: '50%'
+                        }}
+                      />
+                    ) : (
+                      getInitials(request.clientName)
+                    )}
                   </div>
                   <div className="visitor-info">
                     <div className="visitor-name">{request.clientName}</div>
@@ -1505,16 +1518,30 @@ const VisitRequests = ({ currentOfficer = null }) => {
                     width: '80px',
                     height: '80px',
                     borderRadius: '50%',
-                    background: 'linear-gradient(135deg, var(--primary-color), #6366f1)',
+                    background: selectedRequest.userProfilePicture ? 'transparent' : 'linear-gradient(135deg, var(--primary-color), #6366f1)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     margin: '0 auto 16px auto',
                     color: 'white',
                     fontSize: '24px',
-                    fontWeight: '600'
+                    fontWeight: '600',
+                    overflow: 'hidden',
+                    border: selectedRequest.userProfilePicture ? '3px solid #e5e7eb' : 'none'
                   }}>
-                    {getInitials(selectedRequest.clientName)}
+                    {selectedRequest.userProfilePicture ? (
+                      <img 
+                        src={selectedRequest.userProfilePicture} 
+                        alt={selectedRequest.clientName}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    ) : (
+                      getInitials(selectedRequest.clientName)
+                    )}
                   </div>
                   <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--gray-900)', marginBottom: '8px' }}>
                     {selectedRequest.clientName}

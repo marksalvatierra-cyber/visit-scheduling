@@ -367,6 +367,9 @@ const Schedule = () => {
         return;
       }
 
+      // Get user's profile data including profile picture
+      const userData = await firebaseService.getUserData(currentUser.uid);
+
       const selectedInmate = inmates.find(inmate => 
         inmate.inmateNumber && inmate.inmateNumber.toLowerCase() === form.inmateNumber.toLowerCase()
       );
@@ -375,6 +378,7 @@ const Schedule = () => {
         clientId: currentUser.uid,
         clientName: form.visitorName,
         clientEmail: currentUser.email,
+        userProfilePicture: userData?.profilePicture || null,
         inmateId: selectedInmate?.id || '',
         inmateNumber: form.inmateNumber,
         inmateName: selectedInmate?.name || '',
