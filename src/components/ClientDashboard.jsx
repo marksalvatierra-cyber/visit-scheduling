@@ -351,11 +351,33 @@ const ClientDashboard = () => {
           {/* User Profile */}
           <div className="user-profile">
             <button className="profile-btn" onClick={toggleAvatarDropdown}>
-              <img 
-                src={userProfile?.profilePicture || "/image/Logo.png"} 
-                alt="Client Avatar" 
-                className="profile-avatar" 
-              />
+              {userProfile?.profilePicture ? (
+                <img 
+                  src={userProfile.profilePicture} 
+                  alt="Client Avatar" 
+                  className="profile-avatar" 
+                />
+              ) : (
+                <div 
+                  className="profile-avatar"
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontWeight: '600',
+                    fontSize: '16px',
+                    border: '2px solid white',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                  }}
+                >
+                  {userProfile?.fullName?.charAt(0)?.toUpperCase() || userProfile?.email?.charAt(0)?.toUpperCase() || 'U'}
+                </div>
+              )}
               
             </button>
             <div className={`profile-dropdown ${showAvatarDropdown ? 'show' : ''}`} onClick={e => e.stopPropagation()}>
