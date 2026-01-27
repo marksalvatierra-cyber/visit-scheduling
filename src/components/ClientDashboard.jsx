@@ -479,7 +479,13 @@ const ClientDashboard = () => {
                   <div className="modern-welcome-actions">
                     <button
                       className="modern-btn-primary"
-                      onClick={() => handleNavigation('schedule')}
+                      onClick={() => userProfile?.profileStatus === 'verified' ? handleNavigation('schedule') : null}
+                      style={{
+                        opacity: userProfile?.profileStatus === 'verified' ? 1 : 0.5,
+                        cursor: userProfile?.profileStatus === 'verified' ? 'pointer' : 'not-allowed',
+                        position: 'relative'
+                      }}
+                      title={userProfile?.profileStatus !== 'verified' ? 'Account verification required' : 'Schedule a visit'}
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -488,6 +494,13 @@ const ClientDashboard = () => {
                         <line x1="3" y1="10" x2="21" y2="10"></line>
                       </svg>
                       Schedule Visit
+                      {userProfile?.profileStatus !== 'verified' && (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ position: 'absolute', top: '8px', right: '8px' }}>
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <line x1="15" y1="9" x2="9" y2="15"></line>
+                          <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
+                      )}
                     </button>
                     <button
                       className="modern-btn-secondary"
@@ -503,6 +516,89 @@ const ClientDashboard = () => {
                     </button>
                   </div>
                 </div>
+
+              {/* Verification Status Banner */}
+              {userProfile && userProfile.profileStatus !== 'verified' && (
+                <div style={{
+                  marginBottom: '24px',
+                  padding: '20px',
+                  borderRadius: '12px',
+                  background: userProfile.profileStatus === 'rejected' ? '#fef2f2' : '#fef9c3',
+                  border: `2px solid ${userProfile.profileStatus === 'rejected' ? '#fecaca' : '#fef08a'}`,
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '16px'
+                }}>
+                  <div style={{
+                    padding: '8px',
+                    borderRadius: '8px',
+                    background: userProfile.profileStatus === 'rejected' ? '#fee2e2' : '#fef3c7',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={userProfile.profileStatus === 'rejected' ? '#dc2626' : '#ca8a04'} strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="12"></line>
+                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{
+                      margin: '0 0 8px 0',
+                      fontSize: '18px',
+                      fontWeight: '600',
+                      color: userProfile.profileStatus === 'rejected' ? '#991b1b' : '#854d0e'
+                    }}>
+                      {userProfile.profileStatus === 'rejected' ? '❌ Account Verification Rejected' : '⏳ Account Pending Verification'}
+                    </h3>
+                    <p style={{
+                      margin: '0 0 12px 0',
+                      fontSize: '14px',
+                      color: userProfile.profileStatus === 'rejected' ? '#991b1b' : '#854d0e',
+                      lineHeight: '1.6'
+                    }}>
+                      {userProfile.profileStatus === 'rejected' ? (
+                        userProfile.rejectionReason ? (
+                          <>
+                            Your account verification was rejected. <strong>Reason:</strong> {userProfile.rejectionReason}
+                          </>
+                        ) : (
+                          'Your account verification was rejected. Please contact support for more information.'
+                        )
+                      ) : (
+                        'Your account is currently under review. You cannot submit visit requests until your account is verified by an administrator.'
+                      )}
+                    </p>
+                    {userProfile.profileStatus === 'rejected' && (
+                      <button
+                        onClick={() => handleNavigation('profile')}
+                        style={{
+                          padding: '8px 16px',
+                          background: '#dc2626',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                        onMouseOver={(e) => e.target.style.background = '#b91c1c'}
+                        onMouseOut={(e) => e.target.style.background = '#dc2626'}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                          <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        Update Profile & Resubmit
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
               
               {/* Modern Stats Cards */}
               <section className="modern-stats-section">
