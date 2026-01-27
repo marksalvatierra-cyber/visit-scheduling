@@ -846,7 +846,54 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
                   isCompact={true}
                 />
                 <div className="profile-summary-inline">
-                  <h4 className="profile-name-inline">{fullName || 'Your Name'}</h4>
+                  <h4 className="profile-name-inline" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {fullName || 'Your Name'}
+                    {verificationStatus.profileStatus === 'verified' && (
+                      <span style={{
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        color: '#3b82f6',
+                        background: '#eff6ff',
+                        padding: '4px 10px',
+                        borderRadius: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        ✓ Verified
+                      </span>
+                    )}
+                    {verificationStatus.profileStatus === 'pending_verification' && (
+                      <span style={{
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        color: '#f59e0b',
+                        background: '#fffbeb',
+                        padding: '4px 10px',
+                        borderRadius: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        ⏳ Pending
+                      </span>
+                    )}
+                    {verificationStatus.profileStatus === 'rejected' && (
+                      <span style={{
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        color: '#ef4444',
+                        background: '#fef2f2',
+                        padding: '4px 10px',
+                        borderRadius: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        ✗ Rejected
+                      </span>
+                    )}
+                  </h4>
                   <p className="profile-email-inline">{profile.email}</p>
                 </div>
               </div>
