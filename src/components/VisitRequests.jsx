@@ -26,8 +26,9 @@ const VisitRequests = ({ currentOfficer = null }) => {
   // Read the filter from URL parameters on component mount
   useEffect(() => {
     const filterFromUrl = searchParams.get('filter');
-    if (filterFromUrl && ['pending', 'approved', 'rejected', 'reschedule'].includes(filterFromUrl)) {
-      setStatusFilter(filterFromUrl);
+    if (filterFromUrl && ['pending', 'approved', 'rejected', 'reschedule', 'rescheduled'].includes(filterFromUrl)) {
+      // Normalize 'rescheduled' to 'reschedule' for consistent filtering
+      setStatusFilter(filterFromUrl === 'rescheduled' ? 'reschedule' : filterFromUrl);
     }
   }, [searchParams]);
 
