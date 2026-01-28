@@ -197,7 +197,8 @@ const VisitRequests = ({ currentOfficer = null }) => {
     switch (status) {
       case 'approved': return 'badge-approved';
       case 'pending': return 'badge-pending';
-      case 'reschedule': return 'badge-reschedule';
+      case 'reschedule':
+      case 'rescheduled': return 'badge-reschedule';
       case 'rejected': return 'badge-rejected';
       case 'cancelled': return 'badge-cancelled';
       default: return 'badge-pending';
@@ -208,7 +209,8 @@ const VisitRequests = ({ currentOfficer = null }) => {
     switch (status) {
       case 'approved': return 'Approved';
       case 'pending': return 'Pending';
-      case 'reschedule': return 'Reschedule';
+      case 'reschedule':
+      case 'rescheduled': return 'Rescheduled';
       case 'rejected': return 'Rejected';
       case 'cancelled': return 'Cancelled';
       default: return 'Pending';
@@ -226,7 +228,11 @@ const VisitRequests = ({ currentOfficer = null }) => {
       request.clientEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (request.visitDate && request.visitDate.includes(searchTerm));
     
-    const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
+    // Handle both 'reschedule' and 'rescheduled' status values for filter matching
+    const matchesStatus = statusFilter === 'all' || 
+                          request.status === statusFilter ||
+                          (statusFilter === 'reschedule' && request.status === 'rescheduled') ||
+                          (statusFilter === 'rescheduled' && request.status === 'reschedule');
     
     return matchesSearch && matchesStatus;
   });

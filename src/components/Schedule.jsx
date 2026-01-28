@@ -387,21 +387,35 @@ const Schedule = () => {
         relationship: form.relationship,
         reason: form.visitReason,
         status: 'pending',
-        submittedAt: isEditMode ? originalRequest?.submittedAt : new Date().toISOString(),
-        resubmittedAt: isEditMode ? new Date().toISOString() : null
+        submittedAt: new Date().toISOString()
       };
 
-      let result;
+      // Only add original request fields if this is a resubmission and they have valid values
       if (isEditMode && originalRequest) {
-        // Update existing request
-        result = await firebaseService.updateVisitRequest(originalRequest.id, {
-          ...visitRequestData,
-          rescheduleReason: originalRequest.rescheduleReason, // Preserve the reschedule reason
-          previousStatus: originalRequest.status // Track previous status
-        });
-      } else {
-        // Create new request
-        result = await firebaseService.createVisitRequest(visitRequestData);
+        if (originalRequest.id) {
+          visitRequestData.originalRequestId = originalRequest.id;
+        }
+        if (originalRequest.date || originalRequest.visitDate) {
+          visitRequestData.originalRequestDate = originalRequest.date || originalRequest.visitDate;
+        }
+      }
+
+      // Always create a new request (even when in edit mode)
+      const result = await firebaseService.createVisitRequest(visitRequestData);
+      
+      // If this was a resubmission from a rescheduled request, mark the old one as replaced
+      // but keep its original status (don't change it to 'replaced')
+      if (result.success && isEditMode && originalRequest && originalRequest.id) {
+        try {
+          await firebaseService.updateVisitRequest(originalRequest.id, {
+            replacedBy: result.requestId,
+            replacedAt: new Date().toISOString(),
+            isReplaced: true
+          });
+        } catch (error) {
+          console.error('Error marking old request as replaced:', error);
+          // Continue anyway - the new request was created successfully
+        }
       }
       
       if (result.success) {
@@ -411,7 +425,7 @@ const Schedule = () => {
         setOriginalRequest(null);
         showToast(
           isEditMode 
-            ? 'Visit request updated and resubmitted successfully! You will receive an email confirmation once reviewed.' 
+            ? 'New visit request submitted successfully! You will receive an email confirmation once reviewed.' 
             : 'Visit request submitted successfully! You will receive an email confirmation once reviewed.', 
           'success'
         );
