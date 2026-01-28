@@ -378,7 +378,7 @@ const VisitLogs = () => {
                           </svg>
                           View
                         </button>
-                        {v.status === 'rescheduled' && (
+                        {v.status === 'rescheduled' && !v.isReplaced && (
                           <button 
                             className="view-btn" 
                             onClick={() => navigate('/client/schedule', { state: { requestToEdit: v } })}
@@ -395,7 +395,7 @@ const VisitLogs = () => {
                             Edit & Resubmit
                           </button>
                         )}
-                        {(v.status === 'pending' || v.status === 'approved') && !v.completed && (
+                        {(v.status === 'pending' || v.status === 'approved') && !v.completed && !isNoShow(v) && (
                           <button 
                             className="view-btn" 
                             onClick={() => {
