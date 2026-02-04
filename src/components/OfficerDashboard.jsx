@@ -195,6 +195,10 @@ const OfficerDashboard = () => {
     }
   };
 
+  const handleStatCardClick = (status) => {
+    navigate(`/officer/visit?filter=${status}`);
+  };
+
   const toggleAvatarDropdown = () => {
     setShowAvatarDropdown(!showAvatarDropdown);
     setShowBellDropdown(false);
@@ -510,7 +514,11 @@ const OfficerDashboard = () => {
               {/* Officer Stats */}
               <section className="modern-stats-section">
                 <div className="modern-stats-grid">
-                  <div className="modern-stat-card approved">
+                  <div 
+                    className="modern-stat-card approved" 
+                    onClick={() => handleStatCardClick('approved')}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <div className="modern-stat-header">
                       <div className="modern-stat-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -533,7 +541,11 @@ const OfficerDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="modern-stat-card pending">
+                  <div 
+                    className="modern-stat-card pending" 
+                    onClick={() => handleStatCardClick('pending')}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <div className="modern-stat-header">
                       <div className="modern-stat-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -557,7 +569,11 @@ const OfficerDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="modern-stat-card reschedule">
+                  <div 
+                    className="modern-stat-card reschedule" 
+                    onClick={() => handleStatCardClick('rescheduled')}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <div className="modern-stat-header">
                       <div className="modern-stat-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -583,7 +599,11 @@ const OfficerDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="modern-stat-card rejected">
+                  <div 
+                    className="modern-stat-card rejected" 
+                    onClick={() => handleStatCardClick('rejected')}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <div className="modern-stat-header">
                       <div className="modern-stat-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
