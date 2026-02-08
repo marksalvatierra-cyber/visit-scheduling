@@ -3,7 +3,6 @@ import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-
 import firebaseService from '../firebase-services.js';
 import VisitRequests from './VisitRequests';
 import Scan from './Scan';
-import Records from './Records';
 import LogTrails from './LogTrails';
 import OfficerProfile from './OfficerProfile.jsx';
 import './AdminDashboard.css'; // Reuse admin styles for now
@@ -229,7 +228,6 @@ const OfficerDashboard = () => {
     const path = location.pathname;
     if (path.includes('/visit')) return 'visit';
     if (path.includes('/scan')) return 'scan';
-    if (path.includes('/records')) return 'records';
     if (path.includes('/log')) return 'log';
     if (path.includes('/profile')) return 'profile';
     return 'dashboard';
@@ -425,22 +423,6 @@ const OfficerDashboard = () => {
           <div className="nav-section">
             <h3 className="nav-title">Management</h3>
             <ul className="nav-list">
-              <li className={`nav-item ${getCurrentPage() === 'records' ? 'active' : ''}`}>
-                <button 
-                  className="nav-link"
-                  onClick={() => handleNavigation('records')}
-                  title="Records"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14,2 14,8 20,8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                    <polyline points="10,9 9,9 8,9"></polyline>
-                  </svg>
-                  <span className="nav-text">Records</span>
-                </button>
-              </li>
               <li className={`nav-item ${getCurrentPage() === 'log' ? 'active' : ''}`}>
                 <button 
                   className="nav-link"
@@ -689,29 +671,6 @@ const OfficerDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="modern-chart-card" style={{ cursor: 'pointer' }} onClick={() => handleNavigation('records')}>
-                    <div className="modern-chart-header">
-                      <div className="modern-chart-title">
-                        <div className="modern-chart-icon">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14,2 14,8 20,8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                          </svg>
-                        </div>
-                        <div className="modern-chart-info">
-                          <h3>View Records</h3>
-                          <p>Access inmate and visit records</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="modern-chart-container" style={{ 
-                      height: '1px'
-                    }}>
-                    </div>
-                  </div>
-
                   <div className="modern-chart-card" style={{ cursor: 'pointer' }} onClick={() => handleNavigation('log')}>
                     <div className="modern-chart-header">
                       <div className="modern-chart-title">
@@ -827,7 +786,6 @@ const OfficerDashboard = () => {
           <Route path="/visit" element={<VisitRequests currentOfficer={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : null)} onStatsChange={refreshDashboardStats} />} />
           <Route path="/visit/:requestId" element={<VisitRequests currentOfficer={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : null)} onStatsChange={refreshDashboardStats} />} />
           <Route path="/scan" element={<Scan currentOfficer={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : null)} />} />
-          <Route path="/records" element={<Records />} />
           <Route path="/log" element={<LogTrails officerFilter={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : null)} />} />
           <Route path="/profile" element={<OfficerProfile onProfilePictureUpdate={updateProfilePicture} />} />
           <Route path="/" element={<Navigate to="/officer/dashboard" replace />} />

@@ -763,16 +763,50 @@ const Schedule = () => {
                     </svg>
                     Relationship *
                   </label>
-                  <input
-                    type="text"
+                  <select
                     className="form-input"
                     id="relationship"
                     name="relationship"
                     value={form.relationship}
                     onChange={handleChange}
-                    placeholder="e.g., Brother, Friend, Spouse"
                     required
-                  />
+                    style={{
+                      cursor: 'pointer',
+                      appearance: 'none',
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M10.293 3.293L6 7.586 1.707 3.293A1 1 0 00.293 4.707l5 5a1 1 0 001.414 0l5-5a1 1 0 10-1.414-1.414z'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: 'right 12px center',
+                      backgroundSize: '12px',
+                      paddingRight: '36px'
+                    }}
+                  >
+                    <option value="">-- Select Relationship --</option>
+                    <optgroup label="Friend (Wednesday Visits)">
+                      <option value="Friend">Friend</option>
+                    </optgroup>
+                    <optgroup label="Family/Relatives (Thursday-Friday Visits)">
+                      <option value="Father">Father</option>
+                      <option value="Mother">Mother</option>
+                      <option value="Brother">Brother</option>
+                      <option value="Sister">Sister</option>
+                      <option value="Son">Son</option>
+                      <option value="Daughter">Daughter</option>
+                      <option value="Grandfather">Grandfather</option>
+                      <option value="Grandmother">Grandmother</option>
+                      <option value="Grandson">Grandson</option>
+                      <option value="Granddaughter">Granddaughter</option>
+                      <option value="Uncle">Uncle</option>
+                      <option value="Aunt">Aunt</option>
+                      <option value="Cousin">Cousin</option>
+                      <option value="Nephew">Nephew</option>
+                      <option value="Niece">Niece</option>
+                    </optgroup>
+                    <optgroup label="Conjugal (Saturday-Sunday Visits)">
+                      <option value="Spouse">Spouse</option>
+                      <option value="Wife">Wife</option>
+                      <option value="Husband">Husband</option>
+                    </optgroup>
+                  </select>
                   {form.relationship && getAllowedVisitDays(form.relationship) && (
                     <div style={{
                       marginTop: '8px',
