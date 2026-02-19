@@ -13,8 +13,11 @@ const AddInmate = () => {
     lastName: '',
     middleName: '',
     dateOfBirth: '',
-    reasonForImprisonment: ''
+    reasonForImprisonment: '',
+    photoBase64: ''
   });
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const [totalInmates, setTotalInmates] = useState(0);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [addedInmate, setAddedInmate] = useState(null);
@@ -204,12 +207,46 @@ const AddInmate = () => {
     }));
   };
 
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    console.log('Photo selected:', file);
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please select an image file');
+        return;
+      }
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image size should be less than 5MB');
+        return;
+      }
+      setPhotoFile(file);
+      console.log('Photo file set in state:', file.name);
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result);
+        console.log('Photo preview created');
+      };
+      reader.readAsDataURL(file);
+      setError('');
+    }
+  };
+
+  const removePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     
     try {
+      console.log('Form submitted. Photo file state:', photoFile?.name);
+      
       // Validate required fields
       if (!formData.inmateNumber || !formData.securityCategory || !formData.firstName || !formData.lastName || !formData.dateOfBirth || !formData.reasonForImprisonment) {
         throw new Error('Please fill in all required fields');
@@ -224,7 +261,7 @@ const AddInmate = () => {
       }
 
       // Prepare inmate data
-      const inmateData = {
+      let inmateData = {
         ...formData,
         status: 'active',
         createdAt: new Date().toISOString()
@@ -233,29 +270,68 @@ const AddInmate = () => {
       // Debug: Log the data being sent
       console.log('Saving inmate data:', inmateData);
 
-      // Add inmate to Firebase
+      // Add inmate to Firebase first
       const result = await firebaseService.addInmate(inmateData);
 
       if (result.success) {
-    const newInmate = {
-      ...formData,
+        // Add photo as Base64 if provided
+        if (photoFile) {
+          console.log('Compressing and converting inmate photo...');
+          try {
+            const base64Photo = await firebaseService.compressAndConvertImage(photoFile);
+            console.log('Photo converted to Base64');
+            
+            const photoData = {
+              photoBase64: base64Photo,
+              photoFileName: photoFile.name,
+              photoFileType: photoFile.type,
+              photoFileSize: photoFile.size,
+              photoUploadedAt: new Date().toISOString()
+            };
+            
+            // Update inmate with photo data
+            const updateResult = await firebaseService.updateInmate(result.inmateId, photoData);
+            console.log('Photo data update result:', updateResult);
+            
+            if (updateResult.success) {
+              inmateData.photoBase64 = photoData.photoBase64;
+              inmateData.photoFileName = photoData.photoFileName;
+              inmateData.photoFileType = photoData.photoFileType;
+              inmateData.photoFileSize = photoData.photoFileSize;
+              inmateData.photoUploadedAt = photoData.photoUploadedAt;
+            } else {
+              console.error('Failed to update inmate with photo:', updateResult.error);
+              setError('Inmate added but photo save failed: ' + updateResult.error);
+            }
+          } catch (photoError) {
+            console.error('Error during photo conversion:', photoError);
+            setError('Inmate added but photo save failed: ' + photoError.message);
+          }
+        }
+
+        const newInmate = {
+          ...formData,
           id: result.inmateId,
-      createdAt: new Date().toISOString()
-    };
-    
-    setAddedInmate(newInmate);
-    setShowSuccessModal(true);
-    setFormData({
-      inmateNumber: '',
-      securityCategory: '',
-      firstName: '',
-      lastName: '',
-      middleName: '',
-      dateOfBirth: '',
-      reasonForImprisonment: ''
-    });
-    
-    // Update statistics
+          photoBase64: inmateData.photoBase64 || '',
+          createdAt: new Date().toISOString()
+        };
+        
+        setAddedInmate(newInmate);
+        setShowSuccessModal(true);
+        setFormData({
+          inmateNumber: '',
+          securityCategory: '',
+          firstName: '',
+          lastName: '',
+          middleName: '',
+          dateOfBirth: '',
+          reasonForImprisonment: '',
+          photoBase64: ''
+        });
+        setPhotoFile(null);
+        setPhotoPreview(null);
+        
+        // Update statistics
         await loadInmateStatistics();
         await loadInmatesChart();
       } else {
@@ -811,6 +887,103 @@ const AddInmate = () => {
                     required
                   />
                 </div>
+
+                <div style={{...styles.formGroup, ...styles.fullWidth}}>
+                  <label style={styles.label}>Inmate Photo (Optional)</label>
+                  {photoPreview ? (
+                    <div style={{
+                      position: 'relative',
+                      width: '200px',
+                      height: '200px',
+                      borderRadius: '12px',
+                      overflow: 'hidden',
+                      border: '2px solid #e2e8f0',
+                      margin: '0 auto'
+                    }}>
+                      <img
+                        src={photoPreview}
+                        alt="Preview"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={removePhoto}
+                        style={{
+                          position: 'absolute',
+                          top: '8px',
+                          right: '8px',
+                          background: '#ef4444',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '32px',
+                          height: '32px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '18px',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                        }}
+                        onMouseOver={(e) => e.target.style.background = '#dc2626'}
+                        onMouseOut={(e) => e.target.style.background = '#ef4444'}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '12px'
+                    }}>
+                      <label
+                        htmlFor="photo-upload"
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '200px',
+                          height: '200px',
+                          border: '2px dashed #d1d5db',
+                          borderRadius: '12px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          background: '#f9fafb'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.borderColor = '#3b82f6';
+                          e.currentTarget.style.background = '#eff6ff';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.borderColor = '#d1d5db';
+                          e.currentTarget.style.background = '#f9fafb';
+                        }}
+                      >
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                          <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <span style={{ marginTop: '8px', fontSize: '14px', color: '#6b7280' }}>Click to upload photo</span>
+                        <span style={{ fontSize: '12px', color: '#9ca3af' }}>PNG, JPG up to 5MB</span>
+                      </label>
+                      <input
+                        id="photo-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoChange}
+                        style={{ display: 'none' }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
               
               <button 
@@ -1040,6 +1213,24 @@ const AddInmate = () => {
                 {addedInmate.reasonForImprisonment || 'N/A'}
               </div>
             </div>
+
+            {addedInmate.photoBase64 && (
+              <div style={{...styles.infoCard, marginTop: '16px', textAlign: 'center'}}>
+                <div style={styles.infoLabel}>Inmate Photo</div>
+                <img
+                  src={addedInmate.photoBase64}
+                  alt={`${addedInmate.firstName} ${addedInmate.lastName}`}
+                  style={{
+                    width: '150px',
+                    height: '150px',
+                    objectFit: 'cover',
+                    borderRadius: '12px',
+                    marginTop: '12px',
+                    border: '2px solid #e2e8f0'
+                  }}
+                />
+              </div>
+            )}
             
             <div style={styles.modalFooter}>
               <button 

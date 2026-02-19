@@ -685,6 +685,67 @@ async sendPasswordReset(email) {
         }
     }
 
+    // Compress and convert image to Base64 (resizes to fit Firestore 1MB limit)
+    async compressAndConvertImage(file, maxWidth = 800, maxHeight = 800, quality = 0.85) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Create canvas for resizing
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    // Calculate new dimensions while maintaining aspect ratio
+                    if (width > height) {
+                        if (width > maxWidth) {
+                            height = Math.round((height * maxWidth) / width);
+                            width = maxWidth;
+                        }
+                    } else {
+                        if (height > maxHeight) {
+                            width = Math.round((width * maxHeight) / height);
+                            height = maxHeight;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    // Draw and compress image
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Convert to Base64 with compression
+                    const compressedBase64 = canvas.toDataURL(file.type, quality);
+                    
+                    console.log('Image compression:', {
+                        originalSize: `${(file.size / 1024).toFixed(2)} KB`,
+                        compressedSize: `${(compressedBase64.length / 1024).toFixed(2)} KB`,
+                        dimensions: `${width}x${height}`
+                    });
+
+                    resolve(compressedBase64);
+                };
+                img.onerror = reject;
+                img.src = e.target.result;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Convert file to Base64 for non-image files
+    async convertFileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+            reader.readAsDataURL(file);
+        });
+    }
+
     async addInmate(inmateData) {
         try {
             console.log('FirebaseService: Receiving inmate data:', inmateData);

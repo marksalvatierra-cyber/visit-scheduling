@@ -37,8 +37,11 @@ const Records = () => {
     inmateNumber: '',
     securityCategory: '',
     dateOfBirth: '',
-    reasonForImprisonment: ''
+    reasonForImprisonment: '',
+    photoBase64: ''
   });
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const [editError, setEditError] = useState('');
   const [editLoading, setEditLoading] = useState(false);
 
@@ -271,8 +274,11 @@ setFilteredInmates(sortedInmates);
       inmateNumber: inmate.inmateNumber || '',
       securityCategory: inmate.securityCategory || '',
       dateOfBirth: inmate.dateOfBirth || '',
-      reasonForImprisonment: inmate.reasonForImprisonment || ''
+      reasonForImprisonment: inmate.reasonForImprisonment || '',
+      photoBase64: inmate.photoBase64 || ''
     });
+    setPhotoPreview(inmate.photoBase64 || null);
+    setPhotoFile(null);
     setSelectedInmate(inmate);
     setShowEditModal(true);
     setEditError('');
@@ -287,10 +293,42 @@ setFilteredInmates(sortedInmates);
       inmateNumber: '',
       securityCategory: '',
       dateOfBirth: '',
-      reasonForImprisonment: ''
+      reasonForImprisonment: '',
+      photoBase64: ''
     });
+    setPhotoFile(null);
+    setPhotoPreview(null);
     setEditError('');
     setSelectedInmate(null);
+  };
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    console.log('Photo selected in edit modal:', file);
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setEditError('Please select an image file');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setEditError('Image size should be less than 5MB');
+        return;
+      }
+      setPhotoFile(file);
+      console.log('Photo file set for editing:', file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result);
+        console.log('Photo preview created for edit');
+      };
+      reader.readAsDataURL(file);
+      setEditError('');
+    }
+  };
+
+  const removePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(editFormData.photoBase64 || null);
   };
 
   const handleEditChange = (e) => {
@@ -307,16 +345,41 @@ setFilteredInmates(sortedInmates);
     setEditError('');
 
     try {
+      console.log('Edit form submitted. Photo file state:', photoFile?.name);
+      
       if (!editFormData.firstName || !editFormData.lastName || !editFormData.inmateNumber) {
         setEditError('First name, last name, and inmate number are required.');
         setEditLoading(false);
         return;
       }
 
-      const result = await firebaseService.updateInmate(selectedInmate.id, editFormData);
+      let updatedData = { ...editFormData };
+
+      // Add new photo as Base64 if selected
+      if (photoFile) {
+        console.log('Compressing and converting photo for inmate:', selectedInmate.id);
+        try {
+          const base64Photo = await firebaseService.compressAndConvertImage(photoFile);
+          console.log('Photo converted to Base64');
+          
+          updatedData.photoBase64 = base64Photo;
+          updatedData.photoFileName = photoFile.name;
+          updatedData.photoFileType = photoFile.type;
+          updatedData.photoFileSize = photoFile.size;
+          updatedData.photoUploadedAt = new Date().toISOString();
+        } catch (photoError) {
+          console.error('Error during photo conversion:', photoError);
+          setEditError('Failed to save photo: ' + photoError.message);
+          setEditLoading(false);
+          return;
+        }
+      }
+
+      console.log('Updating inmate with data:', updatedData);
+      const result = await firebaseService.updateInmate(selectedInmate.id, updatedData);
 
       if (result.success) {
-        const updatedInmate = { ...selectedInmate, ...editFormData };
+        const updatedInmate = { ...selectedInmate, ...updatedData };
         setAllInmates(prev => prev.map(inmate =>
           inmate.id === selectedInmate.id ? updatedInmate : inmate
         ));
@@ -433,11 +496,26 @@ setFilteredInmates(sortedInmates);
             </div>
           )}
           <div className="modern-inmate-header">
-            <div className="modern-inmate-avatar">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
+            <div className="modern-inmate-avatar" style={{
+              background: inmate.photoBase64 ? 'transparent' : 'linear-gradient(135deg, #6366f1, #4f46e5)',
+              overflow: 'hidden'
+            }}>
+              {inmate.photoBase64 ? (
+                <img
+                  src={inmate.photoBase64}
+                  alt={`${inmate.firstName} ${inmate.lastName}`}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                />
+              ) : (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              )}
             </div>
             <div className="modern-inmate-status">
               <div style={{
@@ -621,15 +699,29 @@ setFilteredInmates(sortedInmates);
                     width: '80px',
                     height: '80px',
                     borderRadius: '50%',
-                    background: 'linear-gradient(135deg, var(--gray-600), var(--gray-700))',
+                    background: selectedInmate.photoBase64 ? 'transparent' : 'linear-gradient(135deg, var(--gray-600), var(--gray-700))',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     margin: '0 auto 16px auto',
                     color: 'white',
-                    fontSize: '32px'
+                    fontSize: '32px',
+                    overflow: 'hidden',
+                    border: selectedInmate.photoBase64 ? '3px solid #e2e8f0' : 'none'
                   }}>
-                    👤
+                    {selectedInmate.photoBase64 ? (
+                      <img
+                        src={selectedInmate.photoBase64}
+                        alt={`${selectedInmate.firstName} ${selectedInmate.lastName}`}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    ) : (
+                      '👤'
+                    )}
                   </div>
                   <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--gray-900)', marginBottom: '8px' }}>
                     {selectedInmate.firstName} {selectedInmate.middleName ? selectedInmate.middleName + ' ' : ''}{selectedInmate.lastName}
@@ -978,6 +1070,107 @@ setFilteredInmates(sortedInmates);
                       onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
                       onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                     />
+                  </div>
+
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: '#475569' }}>
+                      Inmate Photo
+                    </label>
+                    {photoPreview ? (
+                      <div style={{
+                        position: 'relative',
+                        width: '200px',
+                        height: '200px',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        border: '2px solid #e2e8f0',
+                        margin: '0 auto'
+                      }}>
+                        <img
+                          src={photoPreview}
+                          alt="Preview"
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
+                          }}
+                        />
+                        {photoFile && (
+                          <button
+                            type="button"
+                            onClick={removePhoto}
+                            style={{
+                              position: 'absolute',
+                              top: '8px',
+                              right: '8px',
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: '32px',
+                              height: '32px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '18px',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                            }}
+                            onMouseOver={(e) => e.target.style.background = '#dc2626'}
+                            onMouseOut={(e) => e.target.style.background = '#ef4444'}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '12px'
+                      }}>
+                        <label
+                          htmlFor="edit-photo-upload"
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '200px',
+                            height: '200px',
+                            border: '2px dashed #d1d5db',
+                            borderRadius: '12px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            background: '#f9fafb'
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.borderColor = '#3b82f6';
+                            e.currentTarget.style.background = '#eff6ff';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.borderColor = '#d1d5db';
+                            e.currentTarget.style.background = '#f9fafb';
+                          }}
+                        >
+                          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                          </svg>
+                          <span style={{ marginTop: '8px', fontSize: '14px', color: '#6b7280' }}>Click to upload photo</span>
+                          <span style={{ fontSize: '12px', color: '#9ca3af' }}>PNG, JPG up to 5MB</span>
+                        </label>
+                        <input
+                          id="edit-photo-upload"
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePhotoChange}
+                          style={{ display: 'none' }}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
