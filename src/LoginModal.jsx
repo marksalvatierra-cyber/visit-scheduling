@@ -279,10 +279,23 @@ const LoginModal = ({ isOpen, onClose }) => {
           const userRole = userData?.role || userData?.userType;
           
           if (userData && (userRole === 'admin' || userRole === 'officer' || userRole === 'client')) {
-            // Store user data and show terms modal instead of navigating directly
-            setPendingUserData({ userData, userRole });
-            setShowTermsModal(true);
-            setSuccess(''); // Clear the success message
+            // Check if user has already accepted terms
+            if (userData.termsAcceptedAt) {
+              // User has accepted terms, navigate directly to dashboard
+              if (userRole === 'admin') {
+                navigate('/admin/dashboard');
+              } else if (userRole === 'officer') {
+                navigate('/officer/dashboard');
+              } else if (userRole === 'client') {
+                navigate('/client/dashboard');
+              }
+              onClose();
+            } else {
+              // User hasn't accepted terms yet, show terms modal
+              setPendingUserData({ userData, userRole });
+              setShowTermsModal(true);
+              setSuccess(''); // Clear the success message
+            }
           } else {
             setError('User type not recognized.');
           }
@@ -496,23 +509,49 @@ const LoginModal = ({ isOpen, onClose }) => {
   };
 
   // Terms and Conditions modal handlers
-  const handleTermsAccept = () => {
+  const handleTermsAccept = async () => {
     if (pendingUserData) {
       const { userData, userRole } = pendingUserData;
       
-      // Navigate to appropriate dashboard based on user role
-      if (userRole === 'admin') {
-        navigate('/admin/dashboard');
-      } else if (userRole === 'officer') {
-        navigate('/officer/dashboard');
-      } else if (userRole === 'client') {
-        navigate('/client/dashboard');
+      try {
+        // Get current user
+        const currentUser = await firebaseService.getCurrentUser();
+        
+        if (currentUser) {
+          // Save terms acceptance timestamp to user profile
+          await firebaseService.updateUserProfile(currentUser.uid, {
+            termsAcceptedAt: new Date().toISOString()
+          });
+        }
+        
+        // Navigate to appropriate dashboard based on user role
+        if (userRole === 'admin') {
+          navigate('/admin/dashboard');
+        } else if (userRole === 'officer') {
+          navigate('/officer/dashboard');
+        } else if (userRole === 'client') {
+          navigate('/client/dashboard');
+        }
+        
+        // Close both modals
+        setShowTermsModal(false);
+        setPendingUserData(null);
+        onClose();
+      } catch (error) {
+        console.error('Error saving terms acceptance:', error);
+        // Still navigate even if saving fails
+        if (userRole === 'admin') {
+          navigate('/admin/dashboard');
+        } else if (userRole === 'officer') {
+          navigate('/officer/dashboard');
+        } else if (userRole === 'client') {
+          navigate('/client/dashboard');
+        }
+        
+        setShowTermsModal(false);
+        setPendingUserData(null);
+        onClose();
       }
-      
-      // Close both modals
-      setShowTermsModal(false);
-      setPendingUserData(null);
-      onClose();
     }
   };
 
