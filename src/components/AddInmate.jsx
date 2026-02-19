@@ -12,7 +12,8 @@ const AddInmate = () => {
     firstName: '',
     lastName: '',
     middleName: '',
-    dateOfBirth: ''
+    dateOfBirth: '',
+    reasonForImprisonment: ''
   });
   const [totalInmates, setTotalInmates] = useState(0);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -210,7 +211,7 @@ const AddInmate = () => {
     
     try {
       // Validate required fields
-      if (!formData.inmateNumber || !formData.securityCategory || !formData.firstName || !formData.lastName || !formData.dateOfBirth) {
+      if (!formData.inmateNumber || !formData.securityCategory || !formData.firstName || !formData.lastName || !formData.dateOfBirth || !formData.reasonForImprisonment) {
         throw new Error('Please fill in all required fields');
       }
 
@@ -250,7 +251,8 @@ const AddInmate = () => {
       firstName: '',
       lastName: '',
       middleName: '',
-      dateOfBirth: ''
+      dateOfBirth: '',
+      reasonForImprisonment: ''
     });
     
     // Update statistics
@@ -790,6 +792,25 @@ const AddInmate = () => {
                     required
                   />
                 </div>
+                
+                <div style={{...styles.formGroup, ...styles.fullWidth}}>
+                  <label style={styles.label}>Reason for Imprisonment</label>
+                  <textarea
+                    name="reasonForImprisonment"
+                    style={{
+                      ...styles.input,
+                      minHeight: '100px',
+                      resize: 'vertical',
+                      fontFamily: 'inherit'
+                    }}
+                    placeholder="Enter the reason for imprisonment"
+                    value={formData.reasonForImprisonment}
+                    onChange={handleInputChange}
+                    onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                    onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                    required
+                  />
+                </div>
               </div>
               
               <button 
@@ -1010,6 +1031,13 @@ const AddInmate = () => {
               <div style={styles.infoCard}>
                 <div style={styles.infoLabel}>Date of Birth</div>
                 <div style={styles.infoValue}>{formatDate(addedInmate.dateOfBirth)}</div>
+              </div>
+            </div>
+            
+            <div style={{...styles.infoCard, marginTop: '16px'}}>
+              <div style={styles.infoLabel}>Reason for Imprisonment</div>
+              <div style={{...styles.infoValue, whiteSpace: 'pre-wrap', lineHeight: '1.6'}}>
+                {addedInmate.reasonForImprisonment || 'N/A'}
               </div>
             </div>
             

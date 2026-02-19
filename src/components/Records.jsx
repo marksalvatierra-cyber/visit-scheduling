@@ -36,7 +36,8 @@ const Records = () => {
     middleName: '',
     inmateNumber: '',
     securityCategory: '',
-    dateOfBirth: ''
+    dateOfBirth: '',
+    reasonForImprisonment: ''
   });
   const [editError, setEditError] = useState('');
   const [editLoading, setEditLoading] = useState(false);
@@ -269,7 +270,8 @@ setFilteredInmates(sortedInmates);
       middleName: inmate.middleName || '',
       inmateNumber: inmate.inmateNumber || '',
       securityCategory: inmate.securityCategory || '',
-      dateOfBirth: inmate.dateOfBirth || ''
+      dateOfBirth: inmate.dateOfBirth || '',
+      reasonForImprisonment: inmate.reasonForImprisonment || ''
     });
     setSelectedInmate(inmate);
     setShowEditModal(true);
@@ -284,7 +286,8 @@ setFilteredInmates(sortedInmates);
       middleName: '',
       inmateNumber: '',
       securityCategory: '',
-      dateOfBirth: ''
+      dateOfBirth: '',
+      reasonForImprisonment: ''
     });
     setEditError('');
     setSelectedInmate(null);
@@ -646,6 +649,13 @@ setFilteredInmates(sortedInmates);
                     </div>
                   </div>
 
+                  <div className="modern-modal-info-card" style={{ padding: '20px', marginTop: '16px' }}>
+                    <div className="modern-modal-info-label">Reason for Imprisonment</div>
+                    <div className="modern-modal-info-value" style={{ marginTop: '8px', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+                      {selectedInmate.reasonForImprisonment || 'No reason recorded'}
+                    </div>
+                  </div>
+
                   {/* Status Indicator */}
                   <div style={{
                     display: 'flex',
@@ -939,6 +949,31 @@ setFilteredInmates(sortedInmates);
                         outline: 'none',
                         transition: 'all 0.2s ease',
                         cursor: 'pointer'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                    />
+                  </div>
+
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: '#475569' }}>
+                      Reason for Imprisonment
+                    </label>
+                    <textarea
+                      name="reasonForImprisonment"
+                      value={editFormData.reasonForImprisonment}
+                      onChange={handleEditChange}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        transition: 'all 0.2s ease',
+                        minHeight: '100px',
+                        resize: 'vertical',
+                        fontFamily: 'inherit'
                       }}
                       onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
                       onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
