@@ -253,6 +253,19 @@ const AdminProfile = ({ onProfilePictureUpdate }) => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordErrors, setPasswordErrors] = useState({});
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [showPasswords, setShowPasswords] = useState({
+    currentPassword: false,
+    newPassword: false,
+    confirmPassword: false
+  });
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [adminStats, setAdminStats] = useState({
@@ -537,6 +550,110 @@ const AdminProfile = ({ onProfilePictureUpdate }) => {
     setImagePreview(null);
   };
 
+  // Password change handlers
+  const handleOpenPasswordModal = () => {
+    setShowPasswordModal(true);
+    setPasswordForm({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+    setPasswordErrors({});
+  };
+
+  const handleClosePasswordModal = () => {
+    setShowPasswordModal(false);
+    setPasswordForm({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+    setPasswordErrors({});
+    setShowPasswords({
+      currentPassword: false,
+      newPassword: false,
+      confirmPassword: false
+    });
+  };
+
+  const togglePasswordVisibility = (field) => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
+  };
+
+  const validatePasswordForm = () => {
+    const errors = {};
+
+    if (!passwordForm.currentPassword) {
+      errors.currentPassword = 'Current password is required';
+    }
+
+    if (!passwordForm.newPassword) {
+      errors.newPassword = 'New password is required';
+    } else if (passwordForm.newPassword.length < 6) {
+      errors.newPassword = 'Password must be at least 6 characters';
+    }
+
+    if (!passwordForm.confirmPassword) {
+      errors.confirmPassword = 'Please confirm your new password';
+    } else if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (passwordForm.currentPassword === passwordForm.newPassword) {
+      errors.newPassword = 'New password must be different from current password';
+    }
+
+    setPasswordErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleChangePassword = async () => {
+    if (!validatePasswordForm()) {
+      return;
+    }
+
+    setIsChangingPassword(true);
+
+    try {
+      const result = await firebaseService.changePassword(
+        passwordForm.currentPassword,
+        passwordForm.newPassword
+      );
+
+      if (result.success) {
+        showToast('Password changed successfully', 'success');
+        handleClosePasswordModal();
+      } else {
+        showToast(result.error || 'Failed to change password', 'error');
+        if (result.error.includes('Current password')) {
+          setPasswordErrors({ currentPassword: result.error });
+        }
+      }
+    } catch (error) {
+      console.error('Error changing password:', error);
+      showToast('Failed to change password', 'error');
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const handlePasswordFormChange = (field, value) => {
+    setPasswordForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    // Clear error for this field when user starts typing
+    if (passwordErrors[field]) {
+      setPasswordErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
+    }
+  };
+
   return (
     <div className="profile-container">
       <div className="profile-content">
@@ -658,7 +775,7 @@ const AdminProfile = ({ onProfilePictureUpdate }) => {
                     <h4>Change Password</h4>
                     <p>Update your account password</p>
                   </div>
-                  <button className="btn-secondary">Change</button>
+                  <button className="btn-secondary" onClick={handleOpenPasswordModal}>Change</button>
                 </div>
                 <div className="security-item">
                   <div className="security-info">
@@ -745,6 +862,162 @@ const AdminProfile = ({ onProfilePictureUpdate }) => {
               </button>
               <button className="btn-save" onClick={handleSaveProfilePicture} disabled={isLoading}>
                 {isLoading ? 'Saving...' : 'Save Profile Picture'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {showPasswordModal && (
+        <div className="modal-overlay" onClick={handleClosePasswordModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Change Password</h3>
+              <button className="modal-close" onClick={handleClosePasswordModal}>
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="password-form">
+                <div className="form-group">
+                  <label htmlFor="currentPassword">Current Password</label>
+                  <div className="password-input-wrapper">
+                    <input
+                      type={showPasswords.currentPassword ? "text" : "password"}
+                      id="currentPassword"
+                      className={`form-input ${passwordErrors.currentPassword ? 'error' : ''}`}
+                      value={passwordForm.currentPassword}
+                      onChange={(e) => handlePasswordFormChange('currentPassword', e.target.value)}
+                      placeholder="Enter current password"
+                      disabled={isChangingPassword}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={() => togglePasswordVisibility('currentPassword')}
+                      tabIndex={-1}
+                    >
+                      {showPasswords.currentPassword ? (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      ) : (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                          <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  {passwordErrors.currentPassword && (
+                    <span className="error-message">{passwordErrors.currentPassword}</span>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="newPassword">New Password</label>
+                  <div className="password-input-wrapper">
+                    <input
+                      type={showPasswords.newPassword ? "text" : "password"}
+                      id="newPassword"
+                      className={`form-input ${passwordErrors.newPassword ? 'error' : ''}`}
+                      value={passwordForm.newPassword}
+                      onChange={(e) => handlePasswordFormChange('newPassword', e.target.value)}
+                      placeholder="Enter new password (min. 6 characters)"
+                      disabled={isChangingPassword}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={() => togglePasswordVisibility('newPassword')}
+                      tabIndex={-1}
+                    >
+                      {showPasswords.newPassword ? (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      ) : (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                          <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  {passwordErrors.newPassword && (
+                    <span className="error-message">{passwordErrors.newPassword}</span>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="confirmPassword">Confirm New Password</label>
+                  <div className="password-input-wrapper">
+                    <input
+                      type={showPasswords.confirmPassword ? "text" : "password"}
+                      id="confirmPassword"
+                      className={`form-input ${passwordErrors.confirmPassword ? 'error' : ''}`}
+                      value={passwordForm.confirmPassword}
+                      onChange={(e) => handlePasswordFormChange('confirmPassword', e.target.value)}
+                      placeholder="Re-enter new password"
+                      disabled={isChangingPassword}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={() => togglePasswordVisibility('confirmPassword')}
+                      tabIndex={-1}
+                    >
+                      {showPasswords.confirmPassword ? (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      ) : (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                          <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  {passwordErrors.confirmPassword && (
+                    <span className="error-message">{passwordErrors.confirmPassword}</span>
+                  )}
+                </div>
+
+                <div className="password-requirements">
+                  <p className="requirements-title">Password Requirements:</p>
+                  <ul>
+                    <li className={passwordForm.newPassword.length >= 6 ? 'valid' : ''}>
+                      At least 6 characters
+                    </li>
+                    <li className={passwordForm.newPassword && passwordForm.newPassword !== passwordForm.currentPassword ? 'valid' : ''}>
+                      Different from current password
+                    </li>
+                    <li className={passwordForm.newPassword && passwordForm.newPassword === passwordForm.confirmPassword ? 'valid' : ''}>
+                      Passwords match
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn-cancel" 
+                onClick={handleClosePasswordModal} 
+                disabled={isChangingPassword}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-save" 
+                onClick={handleChangePassword} 
+                disabled={isChangingPassword}
+              >
+                {isChangingPassword ? 'Changing Password...' : 'Change Password'}
               </button>
             </div>
           </div>

@@ -150,6 +150,44 @@ async sendPasswordReset(email) {
     }
 }
 
+    // Change password for current user
+    async changePassword(currentPassword, newPassword) {
+        try {
+            const user = this.auth.currentUser;
+            if (!user) {
+                return { success: false, error: 'No user is currently signed in.' };
+            }
+
+            // Re-authenticate user first
+            const credential = firebase.auth.EmailAuthProvider.credential(
+                user.email,
+                currentPassword
+            );
+            
+            await user.reauthenticateWithCredential(credential);
+            
+            // Update password
+            await user.updatePassword(newPassword);
+            
+            return { success: true, message: 'Password updated successfully' };
+        } catch (error) {
+            console.error('Change password error:', error);
+            let errorMessage = 'Failed to change password';
+            
+            if (error.code === 'auth/wrong-password') {
+                errorMessage = 'Current password is incorrect';
+            } else if (error.code === 'auth/weak-password') {
+                errorMessage = 'New password is too weak. Use at least 6 characters';
+            } else if (error.code === 'auth/requires-recent-login') {
+                errorMessage = 'Please log out and log in again before changing password';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            return { success: false, error: errorMessage };
+        }
+    }
+
     // Resend email verification
     async resendVerificationEmail() {
         try {

@@ -5,14 +5,6 @@ import './shared.css';
 const getInitialAdminSettings = () => {
   const storedTheme = localStorage.getItem('dashboard-theme') || 'light';
   return {
-    userManagement: {
-      maxUsers: 100,
-      defaultRole: 'client',
-      autoApproveUsers: false,
-      requireEmailVerification: true,
-      sessionTimeout: 30,
-      maxLoginAttempts: 5
-    },
     visitConfiguration: {
       visitDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
       visitStartTime: '09:00',
@@ -20,56 +12,28 @@ const getInitialAdminSettings = () => {
       maxVisitsPerInmate: 2,
       maxVisitsPerDay: 50,
       bookingWindowDays: 7,
-      allowWalkIns: false
-    },
-    inmateManagement: {
-      autoArchiveInactive: true,
-      archivePeriodDays: 365,
-      allowBulkImport: true,
-      requirePhotoUpload: true,
-      trackMedicalInfo: false,
-      allowVisitorRestrictions: true
+      allowWalkIns: false,
+      visitDuration: 60
     },
     qrCodeSettings: {
       expiryTimeMinutes: 15,
       allowMultiUse: false,
-      requireLocationVerification: true,
-      enableOfflineMode: false,
       autoRefresh: true,
       securityLevel: 'high'
     },
     notifications: {
       emailNotifications: true,
       inAppNotifications: true,
-      urgentAlertsEnabled: true,
       notificationRetentionDays: 30,
-      autoEscalation: false,
       silentHoursStart: '22:00',
       silentHoursEnd: '08:00'
-    },
-    auditLogs: {
-      retentionPeriodDays: 365,
-      logAllActions: true,
-      enableRealTimeAlerts: true,
-      autoExportSchedule: 'weekly',
-      compressionEnabled: true,
-      encryptionEnabled: true
-    },
-    systemMaintenance: {
-      autoBackup: true,
-      backupFrequency: 'daily',
-      cloudSyncEnabled: true,
-      maintenanceWindow: '02:00-04:00',
-      autoCleanupEnabled: true,
-      performanceMonitoring: true
     },
     appearance: {
       theme: storedTheme,
       primaryColor: '#205375',
       fontSize: 'medium',
       compactMode: false,
-      showAnimations: true,
-      dashboardLayout: 'grid'
+      showAnimations: true
     }
   };
 };
@@ -334,14 +298,6 @@ const SlideoutPanel = ({ isOpen, onClose, setting, onSave, getDaysOptions }) => 
                   placeholder="#000000"
                 />
               </div>
-            ) : setting.type === 'textarea' ? (
-              <textarea
-                value={tempValue}
-                onChange={(e) => setTempValue(e.target.value)}
-                className="form-textarea"
-                rows={4}
-                placeholder="Enter value..."
-              />
             ) : (
               <input
                 type="text"
@@ -377,7 +333,7 @@ const SlideoutPanel = ({ isOpen, onClose, setting, onSave, getDaysOptions }) => 
 
 const AdminSettings = () => {
   const [settings, setSettings] = useState(getInitialAdminSettings);
-  const [selectedCategory, setSelectedCategory] = useState('userManagement');
+  const [selectedCategory, setSelectedCategory] = useState('visitConfiguration');
   const [slideoutSetting, setSlideoutSetting] = useState(null);
   const [editingField, setEditingField] = useState(null);
   const [toast, setToast] = useState({ message: '', type: '', isVisible: false });
@@ -385,13 +341,9 @@ const AdminSettings = () => {
   const [historyIndex, setHistoryIndex] = useState(-1);
 
   const categories = [
-    { id: 'userManagement', name: 'User Management', icon: '👥' },
     { id: 'visitConfiguration', name: 'Visit Configuration', icon: '📅' },
-    { id: 'inmateManagement', name: 'Inmate Management', icon: '👤' },
     { id: 'qrCodeSettings', name: 'QR Code Settings', icon: '📱' },
     { id: 'notifications', name: 'Notifications', icon: '🔔' },
-    { id: 'auditLogs', name: 'Audit Logs', icon: '📋' },
-    { id: 'systemMaintenance', name: 'System Maintenance', icon: '🔧' },
     { id: 'appearance', name: 'Appearance', icon: '🎨' }
   ];
 
@@ -409,6 +361,63 @@ const AdminSettings = () => {
       setSettings(history[historyIndex]);
       setHistoryIndex(historyIndex - 1);
       showToast('Changes undone', 'info');
+    }
+  };
+
+  // Reset to defaults
+  const resetToDefaults = () => {
+    if (window.confirm('Are you sure you want to reset all settings to defaults? This cannot be undone.')) {
+      const previousSettings = { ...settings };
+      addToHistory(previousSettings);
+      setSettings(getInitialAdminSettings());
+      showToast('Settings reset to defaults', 'success');
+    }
+  };
+
+  // Reset category to defaults
+  const resetCategory = () => {
+    if (window.confirm(`Reset ${categories.find(c => c.id === selectedCategory)?.name} to defaults?`)) {
+      const previousSettings = { ...settings };
+      addToHistory(previousSettings);
+      const defaultSettings = getInitialAdminSettings();
+      setSettings(prev => ({
+        ...prev,
+        [selectedCategory]: defaultSettings[selectedCategory]
+      }));
+      showToast('Category reset to defaults', 'success');
+    }
+  };
+
+  // Export settings as JSON
+  const exportSettings = () => {
+    const dataStr = JSON.stringify(settings, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `admin-settings-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast('Settings exported successfully', 'success');
+  };
+
+  // Import settings from JSON
+  const importSettings = (event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importedSettings = JSON.parse(e.target?.result);
+          const previousSettings = { ...settings };
+          addToHistory(previousSettings);
+          setSettings(importedSettings);
+          showToast('Settings imported successfully', 'success');
+        } catch (error) {
+          showToast('Invalid settings file', 'error');
+        }
+      };
+      reader.readAsText(file);
     }
   };
 
@@ -489,14 +498,6 @@ const AdminSettings = () => {
 
   const getSettingLabel = (key) => {
     const labels = {
-      // User Management
-      maxUsers: 'Maximum Users',
-      defaultRole: 'Default User Role',
-      autoApproveUsers: 'Auto-Approve New Users',
-      requireEmailVerification: 'Require Email Verification',
-      sessionTimeout: 'Session Timeout (minutes)',
-      maxLoginAttempts: 'Max Login Attempts',
-      
       // Visit Configuration
       visitDays: 'Available Visit Days',
       visitStartTime: 'Visit Start Time',
@@ -505,55 +506,27 @@ const AdminSettings = () => {
       maxVisitsPerDay: 'Max Visits Per Day',
       bookingWindowDays: 'Booking Window (days)',
       allowWalkIns: 'Allow Walk-in Visits',
-      
-      // Inmate Management
-      autoArchiveInactive: 'Auto-Archive Inactive Records',
-      archivePeriodDays: 'Archive Period (days)',
-      allowBulkImport: 'Allow Bulk Import',
-      requirePhotoUpload: 'Require Photo Upload',
-      trackMedicalInfo: 'Track Medical Information',
-      allowVisitorRestrictions: 'Allow Visitor Restrictions',
+      visitDuration: 'Visit Duration (minutes)',
       
       // QR Code Settings
       expiryTimeMinutes: 'QR Code Expiry (minutes)',
       allowMultiUse: 'Allow Multi-Use QR Codes',
-      requireLocationVerification: 'Require Location Verification',
-      enableOfflineMode: 'Enable Offline Mode',
       autoRefresh: 'Auto-Refresh QR Codes',
       securityLevel: 'Security Level',
       
       // Notifications
       emailNotifications: 'Email Notifications',
       inAppNotifications: 'In-App Notifications',
-      urgentAlertsEnabled: 'Urgent Alerts',
       notificationRetentionDays: 'Notification Retention (days)',
-      autoEscalation: 'Auto-Escalation',
       silentHoursStart: 'Silent Hours Start',
       silentHoursEnd: 'Silent Hours End',
-      
-      // Audit Logs
-      retentionPeriodDays: 'Log Retention Period (days)',
-      logAllActions: 'Log All Actions',
-      enableRealTimeAlerts: 'Real-Time Alerts',
-      autoExportSchedule: 'Auto-Export Schedule',
-      compressionEnabled: 'Enable Compression',
-      encryptionEnabled: 'Enable Encryption',
-      
-      // System Maintenance
-      autoBackup: 'Auto Backup',
-      backupFrequency: 'Backup Frequency',
-      cloudSyncEnabled: 'Cloud Sync',
-      maintenanceWindow: 'Maintenance Window',
-      autoCleanupEnabled: 'Auto Cleanup',
-      performanceMonitoring: 'Performance Monitoring',
       
       // Appearance
       theme: 'Theme',
       primaryColor: 'Primary Color',
       fontSize: 'Font Size',
       compactMode: 'Compact Mode',
-      showAnimations: 'Show Animations',
-      dashboardLayout: 'Dashboard Layout'
+      showAnimations: 'Show Animations'
     };
     return labels[key] || key;
   };
@@ -561,37 +534,20 @@ const AdminSettings = () => {
   const getSettingType = (key, value) => {
     if (typeof value === 'boolean') return 'toggle';
     if (typeof value === 'number') return 'number';
-    if (key === 'defaultRole' || key === 'securityLevel' || key === 'autoExportSchedule' || 
-        key === 'backupFrequency' || key === 'theme' || key === 'fontSize' || 
-        key === 'dashboardLayout') return 'select';
+    if (key === 'securityLevel' || key === 'theme' || key === 'fontSize') return 'select';
     if (key === 'visitDays') return 'multiselect';
     if (key === 'primaryColor') return 'color';
     if (key === 'visitStartTime' || key === 'visitEndTime' || 
         key === 'silentHoursStart' || key === 'silentHoursEnd') return 'time';
-    if (key === 'maintenanceWindow') return 'textarea';
     return 'text';
   };
 
   const getSelectOptions = (key) => {
     const options = {
-      defaultRole: [
-        { value: 'client', label: 'Client' },
-        { value: 'admin', label: 'Admin' }
-      ],
       securityLevel: [
         { value: 'low', label: 'Low' },
         { value: 'medium', label: 'Medium' },
         { value: 'high', label: 'High' }
-      ],
-      autoExportSchedule: [
-        { value: 'daily', label: 'Daily' },
-        { value: 'weekly', label: 'Weekly' },
-        { value: 'monthly', label: 'Monthly' }
-      ],
-      backupFrequency: [
-        { value: 'hourly', label: 'Hourly' },
-        { value: 'daily', label: 'Daily' },
-        { value: 'weekly', label: 'Weekly' }
       ],
       theme: [
         { value: 'light', label: 'Light' },
@@ -602,11 +558,6 @@ const AdminSettings = () => {
         { value: 'small', label: 'Small' },
         { value: 'medium', label: 'Medium' },
         { value: 'large', label: 'Large' }
-      ],
-      dashboardLayout: [
-        { value: 'grid', label: 'Grid' },
-        { value: 'list', label: 'List' },
-        { value: 'cards', label: 'Cards' }
       ]
     };
     return options[key] || [];
@@ -648,6 +599,29 @@ const AdminSettings = () => {
               ↶ Undo
             </button>
           )}
+          <button 
+            className="action-btn secondary"
+            onClick={exportSettings}
+            title="Export settings as JSON"
+          >
+            📥 Export
+          </button>
+          <label className="action-btn secondary" title="Import settings from JSON">
+            📤 Import
+            <input
+              type="file"
+              accept=".json"
+              onChange={importSettings}
+              style={{ display: 'none' }}
+            />
+          </label>
+          <button 
+            className="action-btn danger"
+            onClick={resetToDefaults}
+            title="Reset all settings to defaults"
+          >
+            🔄 Reset All
+          </button>
           <div className="admin-badge">
             🔐 Administrator
           </div>
@@ -676,21 +650,26 @@ const AdminSettings = () => {
 
         <div className="settings-main">
           <div className="settings-header">
-            <h2 className="settings-title">
-              {categories.find(c => c.id === selectedCategory)?.name}
-            </h2>
-            <p className="settings-description">
-              Click on any value to edit it directly, or use complex controls for advanced settings.
-            </p>
+            <div>
+              <h2 className="settings-title">
+                {categories.find(c => c.id === selectedCategory)?.name}
+              </h2>
+              <p className="settings-description">
+                Click on any value to edit it directly, or use complex controls for advanced settings.
+              </p>
+            </div>
+            <button 
+              className="action-btn secondary"
+              onClick={resetCategory}
+              title="Reset this category to defaults"
+            >
+              🔄 Reset Category
+            </button>
           </div>
           
           <div className="settings-grid">
-            {Object.entries(settings[selectedCategory])
-              .filter(([key]) =>
-                selectedCategory !== 'appearance' || (key !== 'theme' && key !== 'primaryColor' && key !== 'dashboardLayout')
-              )
-              .map(([key, value]) => (
-                <div key={key} className="setting-item modern">
+            {settings[selectedCategory] && Object.entries(settings[selectedCategory]).map(([key, value]) => (
+              <div key={key} className="setting-item modern">
                   <div className="setting-info">
                     <div className="setting-label">{getSettingLabel(key)}</div>
                     <div className="setting-description">

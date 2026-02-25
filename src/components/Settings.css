@@ -199,6 +199,10 @@
 }
 
 .settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
   padding: 24px 24px 16px;
   border-bottom: 1px solid #f3f4f6;
 }
@@ -409,6 +413,16 @@
 .action-btn:hover {
   border-color: #d1d5db;
   background: #f9fafb;
+}
+
+.action-btn.secondary {
+  color: #205375;
+  border-color: #205375;
+  background: white;
+}
+
+.action-btn.secondary:hover {
+  background: #f0f7fb;
 }
 
 .action-btn.danger {
