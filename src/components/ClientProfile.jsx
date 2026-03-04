@@ -554,6 +554,11 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
     rejectionReason: ''
   });
   const [uploadingId, setUploadingId] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailForm, setEmailForm] = useState({ password: '', newEmail: '', confirmEmail: '' });
+  const [emailErrors, setEmailErrors] = useState({});
+  const [isChangingEmail, setIsChangingEmail] = useState(false);
+  const [showEmailPassword, setShowEmailPassword] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -805,6 +810,70 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
     return placeholders[fieldName] || '';
   };
 
+  // Email change handlers
+  const handleOpenEmailModal = () => {
+    setShowEmailModal(true);
+    setEmailForm({ password: '', newEmail: '', confirmEmail: '' });
+    setEmailErrors({});
+    setShowEmailPassword(false);
+  };
+
+  const handleCloseEmailModal = () => {
+    setShowEmailModal(false);
+    setEmailForm({ password: '', newEmail: '', confirmEmail: '' });
+    setEmailErrors({});
+    setShowEmailPassword(false);
+  };
+
+  const handleEmailFormChange = (field, value) => {
+    setEmailForm(prev => ({ ...prev, [field]: value }));
+    if (emailErrors[field]) {
+      setEmailErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const validateEmailForm = () => {
+    const errors = {};
+    if (!emailForm.password) errors.password = 'Password is required to change email';
+    if (!emailForm.newEmail) {
+      errors.newEmail = 'New email address is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailForm.newEmail)) {
+      errors.newEmail = 'Please enter a valid email address';
+    } else if (emailForm.newEmail === profile.email) {
+      errors.newEmail = 'New email must be different from current email';
+    }
+    if (!emailForm.confirmEmail) {
+      errors.confirmEmail = 'Please confirm your new email';
+    } else if (emailForm.newEmail !== emailForm.confirmEmail) {
+      errors.confirmEmail = 'Email addresses do not match';
+    }
+    setEmailErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleChangeEmail = async () => {
+    if (!validateEmailForm()) return;
+    setIsChangingEmail(true);
+    try {
+      const result = await firebaseService.changeEmail(emailForm.password, emailForm.newEmail);
+      if (result.success) {
+        setProfile(prev => ({ ...prev, email: emailForm.newEmail }));
+        showToast('Email changed successfully. Please verify your new email.', 'success');
+        handleCloseEmailModal();
+      } else {
+        showToast(result.error || 'Failed to change email', 'error');
+        if (result.error && result.error.includes('Password')) {
+          setEmailErrors({ password: result.error });
+        }
+      }
+    } catch (error) {
+      console.error('Error changing email:', error);
+      showToast('Failed to change email', 'error');
+    } finally {
+      setIsChangingEmail(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="profile-page">
@@ -942,15 +1011,34 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
 
                 <div className="field-item">
                   <label className="field-label">Email Address</label>
-                  <InlineEditField
-                    value={profile.email}
-                    onSave={() => {}}
-                    type="email"
-                    label="Email Address"
-                    isEditing={false}
-                    setIsEditing={() => {}}
-                    isReadOnly={true}
-                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <InlineEditField
+                      value={profile.email}
+                      onSave={() => {}}
+                      type="email"
+                      label="Email Address"
+                      isEditing={false}
+                      setIsEditing={() => {}}
+                      isReadOnly={true}
+                    />
+                    <button
+                      onClick={handleOpenEmailModal}
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        background: 'white',
+                        color: '#3b82f6',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0
+                      }}
+                    >
+                      Change
+                    </button>
+                  </div>
                 </div>
 
                 <div className="field-item">
@@ -1233,6 +1321,102 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
           </div>
         </div>
       </div>
+
+      {/* Change Email Modal */}
+      {showEmailModal && (
+        <div className="modal-backdrop">
+          <div className="modal" role="dialog" aria-modal="true">
+            <div className="modal-header">
+              <h4>Change Email Address</h4>
+              <button className="modal-close" onClick={handleCloseEmailModal} aria-label="Close">✕</button>
+            </div>
+            <div className="modal-body">
+              <div style={{ marginBottom: '1rem', padding: '0.75rem', borderRadius: '8px', background: '#f3f4f6', fontSize: '0.85rem', color: '#6b7280' }}>
+                Current email: <strong>{profile.email}</strong>
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label className="field-label" style={{ fontSize: '13px', display: 'block', marginBottom: '4px' }}>Password</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showEmailPassword ? 'text' : 'password'}
+                    className={emailErrors.password ? 'form-input error' : 'form-input'}
+                    value={emailForm.password}
+                    onChange={(e) => handleEmailFormChange('password', e.target.value)}
+                    placeholder="Enter your current password"
+                    disabled={isChangingEmail}
+                    style={{ width: '100%', padding: '8px 36px 8px 8px', borderRadius: '6px', border: emailErrors.password ? '1px solid #ef4444' : '1px solid #d1d5db', fontSize: '13px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowEmailPassword(prev => !prev)}
+                    style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}
+                    tabIndex={-1}
+                  >
+                    {showEmailPassword ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                    )}
+                  </button>
+                </div>
+                {emailErrors.password && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>{emailErrors.password}</span>}
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label className="field-label" style={{ fontSize: '13px', display: 'block', marginBottom: '4px' }}>New Email Address</label>
+                <input
+                  type="email"
+                  className={emailErrors.newEmail ? 'form-input error' : 'form-input'}
+                  value={emailForm.newEmail}
+                  onChange={(e) => handleEmailFormChange('newEmail', e.target.value)}
+                  placeholder="Enter new email address"
+                  disabled={isChangingEmail}
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: emailErrors.newEmail ? '1px solid #ef4444' : '1px solid #d1d5db', fontSize: '13px' }}
+                />
+                {emailErrors.newEmail && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>{emailErrors.newEmail}</span>}
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label className="field-label" style={{ fontSize: '13px', display: 'block', marginBottom: '4px' }}>Confirm New Email</label>
+                <input
+                  type="email"
+                  className={emailErrors.confirmEmail ? 'form-input error' : 'form-input'}
+                  value={emailForm.confirmEmail}
+                  onChange={(e) => handleEmailFormChange('confirmEmail', e.target.value)}
+                  placeholder="Re-enter new email address"
+                  disabled={isChangingEmail}
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: emailErrors.confirmEmail ? '1px solid #ef4444' : '1px solid #d1d5db', fontSize: '13px' }}
+                />
+                {emailErrors.confirmEmail && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>{emailErrors.confirmEmail}</span>}
+              </div>
+
+              <div style={{ fontSize: '12px', color: '#6b7280', padding: '8px', background: '#f9fafb', borderRadius: '6px' }}>
+                <p style={{ fontWeight: '600', marginBottom: '4px' }}>Requirements:</p>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  <li style={{ color: emailForm.newEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailForm.newEmail) ? '#10b981' : '#9ca3af' }}>
+                    {emailForm.newEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailForm.newEmail) ? '✓' : '○'} Valid email format
+                  </li>
+                  <li style={{ color: emailForm.newEmail && emailForm.newEmail !== profile.email ? '#10b981' : '#9ca3af' }}>
+                    {emailForm.newEmail && emailForm.newEmail !== profile.email ? '✓' : '○'} Different from current email
+                  </li>
+                  <li style={{ color: emailForm.newEmail && emailForm.newEmail === emailForm.confirmEmail ? '#10b981' : '#9ca3af' }}>
+                    {emailForm.newEmail && emailForm.newEmail === emailForm.confirmEmail ? '✓' : '○'} Email addresses match
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button className="btn-secondary" onClick={handleCloseEmailModal} disabled={isChangingEmail}>
+                Cancel
+              </button>
+              <button className="btn-primary" onClick={handleChangeEmail} disabled={isChangingEmail}>
+                {isChangingEmail ? 'Changing Email...' : 'Change Email'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Toast
         message={toast.message}

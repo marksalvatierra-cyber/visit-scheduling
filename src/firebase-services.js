@@ -201,6 +201,60 @@ async sendPasswordReset(email) {
         }
     }
 
+    // Change email for current user
+    async changeEmail(currentPassword, newEmail) {
+        try {
+            const user = this.auth.currentUser;
+            if (!user) {
+                return { success: false, error: 'No user is currently signed in.' };
+            }
+
+            // Re-authenticate user first
+            const credential = firebase.auth.EmailAuthProvider.credential(
+                user.email,
+                currentPassword
+            );
+
+            await user.reauthenticateWithCredential(credential);
+
+            // Update email in Firebase Auth
+            await user.updateEmail(newEmail);
+
+            // Send verification email for the new address
+            try {
+                await user.sendEmailVerification();
+            } catch (verifyErr) {
+                console.error('Failed to send verification email:', verifyErr);
+            }
+
+            // Update email in Firestore user document
+            await this.db.collection('users').doc(user.uid).update({
+                email: newEmail,
+                emailVerified: false,
+                emailUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            return { success: true, message: 'Email updated successfully. Please verify your new email address.' };
+        } catch (error) {
+            console.error('Change email error:', error);
+            let errorMessage = 'Failed to change email';
+
+            if (error.code === 'auth/wrong-password') {
+                errorMessage = 'Password is incorrect';
+            } else if (error.code === 'auth/invalid-email') {
+                errorMessage = 'The new email address is invalid';
+            } else if (error.code === 'auth/email-already-in-use') {
+                errorMessage = 'This email address is already in use by another account';
+            } else if (error.code === 'auth/requires-recent-login') {
+                errorMessage = 'Please log out and log in again before changing email';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            return { success: false, error: errorMessage };
+        }
+    }
+
     // Resend email verification
     async resendVerificationEmail() {
         try {
