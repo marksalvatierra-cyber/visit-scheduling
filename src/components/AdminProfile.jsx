@@ -257,6 +257,10 @@ const AdminProfile = ({ onProfilePictureUpdate }) => {
   const [showLoginHistoryModal, setShowLoginHistoryModal] = useState(false);
   const [loginHistory, setLoginHistory] = useState([]);
   const [loginHistoryLoading, setLoginHistoryLoading] = useState(false);
+  const [systemActivity, setSystemActivity] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [togglingTwoFactor, setTogglingTwoFactor] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -308,10 +312,16 @@ const AdminProfile = ({ onProfilePictureUpdate }) => {
               console.log('Setting profile data with avatar:', updatedProfileData.avatar);
               return updatedProfileData;
             });
+
+            // Load 2FA status
+            setTwoFactorEnabled(userData.twoFactorEnabled || false);
           }
 
           // Load admin statistics
           await loadAdminStatistics(user.uid);
+
+          // Load system activity
+          await loadSystemActivity(user.uid);
         }
       } catch (error) {
         console.error('Error loading user profile:', error);
@@ -321,6 +331,36 @@ const AdminProfile = ({ onProfilePictureUpdate }) => {
     
     loadUserProfile();
   }, []);
+
+  // Format timestamp to relative time string
+  const getTimeAgo = (date) => {
+    if (!date) return 'Unknown';
+    const now = new Date();
+    const diff = now - date;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes} min ago`;
+    if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+    if (days < 7) return `${days} day${days !== 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  // Load system activity (login, profile updates, password changes)
+  const loadSystemActivity = async (uid) => {
+    const userId = uid || currentUser?.uid;
+    if (!userId) return;
+    try {
+      setActivityLoading(true);
+      const activities = await firebaseService.getSystemActivity(userId, 10);
+      setSystemActivity(activities.map(a => ({ ...a, timeAgo: getTimeAgo(a.timestamp) })));
+    } catch (error) {
+      console.error('Error loading system activity:', error);
+    } finally {
+      setActivityLoading(false);
+    }
+  };
 
   // Function to calculate admin statistics
   const loadAdminStatistics = async (userId) => {
@@ -440,6 +480,18 @@ const AdminProfile = ({ onProfilePictureUpdate }) => {
         }));
 
         showToast(`${field} updated successfully!`);
+
+        // Record system activity
+        try {
+          await firebaseService.recordSystemActivity(currentUser.uid, {
+            action: 'profile_update',
+            title: `Updated ${field}`,
+            icon: 'edit'
+          });
+          loadSystemActivity();
+        } catch (e) {
+          console.error('Failed to record activity:', e);
+        }
       } else {
         throw new Error(result.error || `Failed to update ${field}`);
       }
@@ -521,6 +573,19 @@ const AdminProfile = ({ onProfilePictureUpdate }) => {
             }
 
             showToast('Profile picture updated successfully!', 'success');
+
+            // Record system activity
+            try {
+              await firebaseService.recordSystemActivity(currentUser.uid, {
+                action: 'profile_picture',
+                title: 'Updated profile picture',
+                icon: 'camera'
+              });
+              loadSystemActivity();
+            } catch (e) {
+              console.error('Failed to record activity:', e);
+            }
+
             setShowImageModal(false);
             setSelectedImage(null);
             setImagePreview(null);
@@ -628,6 +693,19 @@ const AdminProfile = ({ onProfilePictureUpdate }) => {
 
       if (result.success) {
         showToast('Password changed successfully', 'success');
+
+        // Record system activity
+        try {
+          await firebaseService.recordSystemActivity(currentUser.uid, {
+            action: 'password_change',
+            title: 'Changed account password',
+            icon: 'lock'
+          });
+          loadSystemActivity();
+        } catch (e) {
+          console.error('Failed to record activity:', e);
+        }
+
         handleClosePasswordModal();
       } else {
         showToast(result.error || 'Failed to change password', 'error');
@@ -711,6 +789,49 @@ const AdminProfile = ({ onProfilePictureUpdate }) => {
       showToast('Failed to load login history', 'error');
     } finally {
       setLoginHistoryLoading(false);
+    }
+  };
+
+  const handleToggleTwoFactor = async () => {
+    if (!currentUser) {
+      showToast('User not authenticated', 'error');
+      return;
+    }
+
+    setTogglingTwoFactor(true);
+    const newValue = !twoFactorEnabled;
+
+    try {
+      const result = await firebaseService.updateUserProfile(currentUser.uid, {
+        twoFactorEnabled: newValue
+      });
+
+      if (result.success) {
+        setTwoFactorEnabled(newValue);
+        showToast(
+          newValue ? 'Two-factor authentication enabled' : 'Two-factor authentication disabled',
+          'success'
+        );
+
+        // Record system activity
+        try {
+          await firebaseService.recordSystemActivity(currentUser.uid, {
+            action: '2fa_toggle',
+            title: newValue ? 'Enabled two-factor authentication' : 'Disabled two-factor authentication',
+            icon: 'lock'
+          });
+          loadSystemActivity();
+        } catch (e) {
+          console.error('Failed to record activity:', e);
+        }
+      } else {
+        throw new Error(result.error || 'Failed to update 2FA setting');
+      }
+    } catch (error) {
+      console.error('Error toggling 2FA:', error);
+      showToast('Failed to update two-factor authentication', 'error');
+    } finally {
+      setTogglingTwoFactor(false);
     }
   };
 
@@ -826,9 +947,37 @@ const AdminProfile = ({ onProfilePictureUpdate }) => {
                 <div className="security-item">
                   <div className="security-info">
                     <h4>Two-Factor Authentication</h4>
-                    <p>Add an extra layer of security to your account</p>
+                    <p>{twoFactorEnabled ? 'Two-factor authentication is enabled' : 'Add an extra layer of security to your account'}</p>
                   </div>
-                  <button className="btn-secondary">Enable</button>
+                  <button
+                    className={`toggle-switch ${twoFactorEnabled ? 'active' : ''}`}
+                    onClick={handleToggleTwoFactor}
+                    disabled={togglingTwoFactor}
+                    style={{
+                      position: 'relative',
+                      width: '50px',
+                      height: '26px',
+                      borderRadius: '13px',
+                      border: 'none',
+                      cursor: togglingTwoFactor ? 'wait' : 'pointer',
+                      background: twoFactorEnabled ? '#10b981' : '#d1d5db',
+                      transition: 'background 0.3s ease',
+                      padding: 0,
+                      flexShrink: 0
+                    }}
+                  >
+                    <span style={{
+                      position: 'absolute',
+                      top: '3px',
+                      left: twoFactorEnabled ? '27px' : '3px',
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      background: '#fff',
+                      transition: 'left 0.3s ease',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                    }} />
+                  </button>
                 </div>
                 <div className="security-item">
                   <div className="security-info">
@@ -853,46 +1002,72 @@ const AdminProfile = ({ onProfilePictureUpdate }) => {
             <div className="card-header">
               <h3 className="card-title">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
                 Recent Activity
               </h3>
             </div>
             <div className="card-content">
               <div className="activity-list">
-                <div className="activity-item">
-                  <div className="activity-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M9 12l2 2 4-4"></path>
+                {activityLoading ? (
+                  <div style={{ textAlign: 'center', padding: '1.5rem' }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                      <path d="M21 12a9 9 0 11-6.219-8.56"/>
                     </svg>
+                    <p style={{ marginTop: '0.5rem', color: 'var(--text-secondary, #6b7280)', fontSize: '0.85rem' }}>Loading activity...</p>
                   </div>
-                  <div className="activity-content">
-                    <p className="activity-text">Approved visit request for Inmate #12345</p>
-                    <span className="activity-time">2 hours ago</span>
-                  </div>
-                </div>
-                <div className="activity-item">
-                  <div className="activity-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                ) : systemActivity.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-secondary, #6b7280)' }}>
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ margin: '0 auto 0.5rem', opacity: 0.4, display: 'block' }}>
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
+                    <p style={{ fontSize: '0.9rem' }}>No recent activity yet.</p>
+                    <p style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>Activity will appear after your next login.</p>
                   </div>
-                  <div className="activity-content">
-                    <p className="activity-text">Added new inmate record</p>
-                    <span className="activity-time">4 hours ago</span>
-                  </div>
-                </div>
-                <div className="activity-item">
-                  <div className="activity-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                    </svg>
-                  </div>
-                  <div className="activity-content">
-                    <p className="activity-text">Updated system settings</p>
-                    <span className="activity-time">1 day ago</span>
-                  </div>
-                </div>
+                ) : (
+                  systemActivity.map((activity, index) => (
+                    <div className="activity-item" key={activity.id || index}>
+                      <div className="activity-icon" style={{
+                        color: activity.icon === 'login' ? '#10b981'
+                          : activity.icon === 'lock' ? '#ef4444'
+                          : activity.icon === 'camera' ? '#8b5cf6'
+                          : '#3b82f6'
+                      }}>
+                        {activity.icon === 'login' && (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                            <polyline points="10 17 15 12 10 7"></polyline>
+                            <line x1="15" y1="12" x2="3" y2="12"></line>
+                          </svg>
+                        )}
+                        {activity.icon === 'edit' && (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                          </svg>
+                        )}
+                        {activity.icon === 'camera' && (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                          </svg>
+                        )}
+                        {activity.icon === 'lock' && (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                          </svg>
+                        )}
+                      </div>
+                      <div className="activity-content">
+                        <p className="activity-text">{activity.title}</p>
+                        <span className="activity-time">{activity.timeAgo}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>

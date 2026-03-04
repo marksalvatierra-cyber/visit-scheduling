@@ -65,6 +65,11 @@ class FirebaseService {
             // Record login history
             try {
                 await this.recordLoginHistory(user.uid);
+                await this.recordSystemActivity(user.uid, {
+                    action: 'login',
+                    title: 'Signed in to account',
+                    icon: 'login'
+                });
             } catch (historyError) {
                 console.error('Failed to record login history:', historyError);
             }
@@ -312,6 +317,46 @@ async sendPasswordReset(email) {
             return history;
         } catch (error) {
             console.error('Error fetching login history:', error);
+            return [];
+        }
+    }
+
+    // System Activity Methods (login, profile updates, password changes, etc.)
+    async recordSystemActivity(userId, activity) {
+        try {
+            await this.db.collection('users').doc(userId).collection('systemActivity').add({
+                ...activity,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            return { success: true };
+        } catch (error) {
+            console.error('Error recording system activity:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    async getSystemActivity(userId, limitCount = 10) {
+        try {
+            const snapshot = await this.db
+                .collection('users')
+                .doc(userId)
+                .collection('systemActivity')
+                .orderBy('timestamp', 'desc')
+                .limit(limitCount)
+                .get();
+
+            const activities = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                activities.push({
+                    id: doc.id,
+                    ...data,
+                    timestamp: data.timestamp ? data.timestamp.toDate() : null
+                });
+            });
+            return activities;
+        } catch (error) {
+            console.error('Error fetching system activity:', error);
             return [];
         }
     }
