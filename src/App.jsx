@@ -93,36 +93,42 @@ function App() {
               <section className="bottom-section">
                 <div className="featured-story">
                   <h2>Featured Story</h2>
+                  <a href="https://www.facebook.com/share/p/1E9Gx92CAW/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
                   <div className="story-card">
                     <div className="story-thumb">
-                      <img src="/image/12.png" alt="Story Thumbnail" className="story-thumb-image" />
+                      <img src="/image/1st.png" alt="Story Thumbnail" className="story-thumb-image" />
                     </div>
                     <div className="story-content">
-                      <div className="story-title">IPPF CONTINUOUSLY IMPLEMENTS REFORMATION PROGRAMS THROUGH AGRICULTURAL ACTIVITIES</div>
-                      <div className="story-desc">On 20 February 2025, the Iwahig Prison and Penal Farm (IPPF) successfully completed planting rice in four (4) hectares of...</div>
-                      <div className="story-date">20 February 2025</div>
+                      <div className="story-title">DPETS Conducts 7K TAMA Lecture at Sablayan Prison and Penal Farm</div>
+                      <div className="story-desc">The 7K TAMA is designed to provide a comprehensive educational foundation, shaping personnel into dedicated, principled, and globally competent Corrections Officers who embody the highest standards of honesty and ethical behavior....</div>
+                      <div className="story-date">21-23 February 2026</div>
                     </div>
                   </div>
+                  </a>
+                  <a href="https://www.facebook.com/share/v/18EZA2MCET/?mibextid=adiEgM" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
                   <div className="story-card">
                     <div className="story-thumb">
-                      <img src="/image/Info.png" alt="Story Thumbnail" className="story-thumb-image" />
+                      <img src="/image/2nd.png" alt="Story Thumbnail" className="story-thumb-image" />
                     </div>
                     <div className="story-content">
-                      <div className="story-title">BUCOR, PHILIPPINE PLAYHOUSE, INC. FORGE PARTNERSHIP TO ENHANCE CIW ANG TEATRO PROGRAM</div>
-                      <div className="story-desc">The Central Prison Camp Sablayan Penal Farm (BuCor) and Philippine Playhouse, Inc. officially signed a Memorandum of Agreement (MOA) to strengthen the implementation...</div>
-                      <div className="story-date">22 February 2025</div>
+                      <div className="story-title">SPPF Personnel Undergo Emergency Readiness through Intensive Firefighting Refresher Training</div>
+                      <div className="story-desc">From 20-22 February 2026, the Sablayan Prison and Penal Farm (SPPF), through the Learning and Development Section (LDS), led by CSO3 Lorelie G Silva, organized a...</div>
+                      <div className="story-date">20-22 February 2026</div>
                     </div>
                   </div>
+                  </a>
+                  <a href="https://www.facebook.com/share/v/14WYUisLsHu/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
                   <div className="story-card">
                     <div className="story-thumb">
-                      <img src="/image/Hiring.png" alt="Story Thumbnail" className="story-thumb-image" />
+                      <img src="/image/3rd.png" alt="Story Thumbnail" className="story-thumb-image" />
                     </div>
                     <div className="story-content">
-                      <div className="story-title">IPPF PDLs RECEIVE ASSISTANCE FROM DOLE</div>
-                      <div className="story-desc">Iwahig, Puerto Princesa – The Department of Labor and Employment (DOLE) in partnership with the Bureau of Jail Management and...</div>
-                      <div className="story-date">21 February 2025</div>
+                      <div className="story-title">SPPF Women Personnel Joins Simultaneous Clean-up Drive Activity</div>
+                      <div className="story-desc">A total of 150 women personnel from Sablayan Prison and Penal Farm (SPPF) participated in a simultaneous clean-up drive in celebration of National Women's Month 2025 on 14 March 2025...</div>
+                      <div className="story-date">14 March 2025</div>
                     </div>
                   </div>
+                  </a>
                 </div>
                 <div className="map-section map-section-small unified-contact-card">
                   <div className="contact-title">Get in Touch</div>
