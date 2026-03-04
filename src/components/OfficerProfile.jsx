@@ -172,11 +172,7 @@ const OfficerPersonalInfo = ({
         <SimpleInfoItem
           label="Email"
           value={profileData.email}
-          onSave={(value) => handleFieldChange('email', value)}
-          type="email"
-          isEditing={editingField === 'email'}
-          setIsEditing={(editing) => setEditingField(editing ? 'email' : null)}
-          placeholder="Enter your email"
+          isReadOnly={true}
         />
         <SimpleInfoItem
           label="Phone"
