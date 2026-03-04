@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import firebaseService from '../firebase-services.js';
 import VisitRequests from './VisitRequests';
+import Records from './Records';
 import Scan from './Scan';
 import LogTrails from './LogTrails';
 import OfficerProfile from './OfficerProfile.jsx';
@@ -228,6 +229,7 @@ const OfficerDashboard = () => {
     const path = location.pathname;
     if (path.includes('/visit')) return 'visit';
     if (path.includes('/scan')) return 'scan';
+    if (path.includes('/records')) return 'records';
     if (path.includes('/log')) return 'log';
     if (path.includes('/profile')) return 'profile';
     return 'dashboard';
@@ -415,6 +417,21 @@ const OfficerDashboard = () => {
                     <path d="M17 17h6v6h-6z"></path>
                   </svg>
                   <span className="nav-text">Scan</span>
+                </button>
+              </li>
+              <li className={`nav-item ${getCurrentPage() === 'records' ? 'active' : ''}`}>
+                <button 
+                  className="nav-link"
+                  onClick={() => handleNavigation('records')}
+                  title="Records"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                  <span className="nav-text">Records</span>
                 </button>
               </li>
             </ul>
@@ -786,6 +803,7 @@ const OfficerDashboard = () => {
           <Route path="/visit" element={<VisitRequests currentOfficer={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : null)} onStatsChange={refreshDashboardStats} />} />
           <Route path="/visit/:requestId" element={<VisitRequests currentOfficer={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : null)} onStatsChange={refreshDashboardStats} />} />
           <Route path="/scan" element={<Scan currentOfficer={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : null)} />} />
+          <Route path="/records" element={<Records viewOnly={true} />} />
           <Route path="/log" element={<LogTrails officerFilter={userProfile?.name || (userProfile?.firstName && userProfile?.lastName ? `${userProfile.firstName} ${userProfile.lastName}` : null)} />} />
           <Route path="/profile" element={<OfficerProfile onProfilePictureUpdate={updateProfilePicture} />} />
           <Route path="/" element={<Navigate to="/officer/dashboard" replace />} />

@@ -15,7 +15,7 @@ const RecordsLoadingAnimation = () => (
 );
 
 
-const Records = () => {
+const Records = ({ viewOnly = false }) => {
   const [currentView, setCurrentView] = useState('sections'); // 'sections' or 'inmates'
   const [currentSection, setCurrentSection] = useState('');
   const [allInmates, setAllInmates] = useState([]);
@@ -401,7 +401,7 @@ setFilteredInmates(sortedInmates);
   };
 
   const handleCardClick = (inmate) => {
-    if (editMode) {
+    if (editMode && !viewOnly) {
       openEditModal(inmate);
     } else {
       viewInmateDetails(inmate);
@@ -475,7 +475,7 @@ setFilteredInmates(sortedInmates);
           onClick={() => handleCardClick(inmate)}
           style={{ position: 'relative', cursor: 'pointer' }}
         >
-          {editMode && (
+          {editMode && !viewOnly && (
             <div style={{
               position: 'absolute',
               top: '8px',
@@ -619,7 +619,7 @@ setFilteredInmates(sortedInmates);
             placeholder="Search by name, inmate number, or security category..."
           />
         </div>
-        {currentView === 'inmates' && (
+        {currentView === 'inmates' && !viewOnly && (
           <button
             onClick={() => setEditMode(!editMode)}
             style={{
@@ -870,7 +870,7 @@ setFilteredInmates(sortedInmates);
       )}
 
       {/* Edit Modal */}
-      {showEditModal && (
+      {showEditModal && !viewOnly && (
         <div className="modern-modal-overlay" onClick={closeEditModal}>
           <div 
             className="modern-modal-content" 
