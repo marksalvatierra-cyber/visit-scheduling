@@ -61,6 +61,14 @@ class FirebaseService {
             }
             
             this.currentUser = user;
+
+            // Record login history
+            try {
+                await this.recordLoginHistory(user.uid);
+            } catch (historyError) {
+                console.error('Failed to record login history:', historyError);
+            }
+
             return { success: true, user: this.currentUser };
         } catch (error) {
             return { success: false, error: error.message };
@@ -262,6 +270,49 @@ async sendPasswordReset(email) {
         } catch (error) {
             console.error('Error getting user data:', error);
             return null;
+        }
+    }
+
+    // Login History Methods
+    async recordLoginHistory(userId) {
+        try {
+            await this.db.collection('users').doc(userId).collection('loginHistory').add({
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                userAgent: navigator.userAgent,
+                platform: navigator.platform || 'Unknown',
+                language: navigator.language || 'Unknown',
+                screenResolution: `${window.screen.width}x${window.screen.height}`,
+            });
+            return { success: true };
+        } catch (error) {
+            console.error('Error recording login history:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    async getLoginHistory(userId, limitCount = 20) {
+        try {
+            const snapshot = await this.db
+                .collection('users')
+                .doc(userId)
+                .collection('loginHistory')
+                .orderBy('timestamp', 'desc')
+                .limit(limitCount)
+                .get();
+
+            const history = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                history.push({
+                    id: doc.id,
+                    ...data,
+                    timestamp: data.timestamp ? data.timestamp.toDate() : null
+                });
+            });
+            return history;
+        } catch (error) {
+            console.error('Error fetching login history:', error);
+            return [];
         }
     }
 

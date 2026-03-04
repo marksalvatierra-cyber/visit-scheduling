@@ -254,6 +254,9 @@ const AdminProfile = ({ onProfilePictureUpdate }) => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showLoginHistoryModal, setShowLoginHistoryModal] = useState(false);
+  const [loginHistory, setLoginHistory] = useState([]);
+  const [loginHistoryLoading, setLoginHistoryLoading] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -654,6 +657,63 @@ const AdminProfile = ({ onProfilePictureUpdate }) => {
     }
   };
 
+  // Login history helpers
+  const parseBrowserInfo = (userAgent) => {
+    if (!userAgent) return { browser: 'Unknown', os: 'Unknown' };
+    let browser = 'Unknown';
+    if (userAgent.includes('Edg/')) browser = 'Microsoft Edge';
+    else if (userAgent.includes('Chrome/') && !userAgent.includes('Edg/')) browser = 'Google Chrome';
+    else if (userAgent.includes('Firefox/')) browser = 'Mozilla Firefox';
+    else if (userAgent.includes('Safari/') && !userAgent.includes('Chrome/')) browser = 'Safari';
+    else if (userAgent.includes('Opera') || userAgent.includes('OPR/')) browser = 'Opera';
+
+    let os = 'Unknown';
+    if (userAgent.includes('Windows NT 10')) os = 'Windows 10/11';
+    else if (userAgent.includes('Windows')) os = 'Windows';
+    else if (userAgent.includes('Mac OS X')) os = 'macOS';
+    else if (userAgent.includes('Linux')) os = 'Linux';
+    else if (userAgent.includes('Android')) os = 'Android';
+    else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) os = 'iOS';
+
+    return { browser, os };
+  };
+
+  const formatLoginDate = (date) => {
+    if (!date) return 'Unknown';
+    const now = new Date();
+    const diff = now - date;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+    if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+    if (days < 7) return `${days} day${days !== 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+  };
+
+  const handleViewLoginHistory = async () => {
+    if (!currentUser) {
+      showToast('User not authenticated', 'error');
+      return;
+    }
+    setShowLoginHistoryModal(true);
+    setLoginHistoryLoading(true);
+    try {
+      const historyData = await firebaseService.getLoginHistory(currentUser.uid, 20);
+      setLoginHistory(historyData);
+    } catch (error) {
+      console.error('Error loading login history:', error);
+      showToast('Failed to load login history', 'error');
+    } finally {
+      setLoginHistoryLoading(false);
+    }
+  };
+
   return (
     <div className="profile-container">
       <div className="profile-content">
@@ -782,7 +842,7 @@ const AdminProfile = ({ onProfilePictureUpdate }) => {
                     <h4>Login History</h4>
                     <p>View your recent login activity</p>
                   </div>
-                  <button className="btn-secondary">View</button>
+                  <button className="btn-secondary" onClick={handleViewLoginHistory}>View</button>
                 </div>
               </div>
             </div>
@@ -1018,6 +1078,93 @@ const AdminProfile = ({ onProfilePictureUpdate }) => {
                 disabled={isChangingPassword}
               >
                 {isChangingPassword ? 'Changing Password...' : 'Change Password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Login History Modal */}
+      {showLoginHistoryModal && (
+        <div className="modal-overlay" onClick={() => setShowLoginHistoryModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <h3>Login History</h3>
+              <button className="modal-close" onClick={() => setShowLoginHistoryModal(false)}>
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              {loginHistoryLoading ? (
+                <div style={{ textAlign: 'center', padding: '2rem' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                    <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                  </svg>
+                  <p style={{ marginTop: '0.5rem', color: 'var(--text-secondary, #6b7280)' }}>Loading login history...</p>
+                </div>
+              ) : loginHistory.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary, #6b7280)' }}>
+                  <p>No login history recorded yet.</p>
+                  <p style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>History will appear after your next login.</p>
+                </div>
+              ) : (
+                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                  {loginHistory.map((entry, index) => {
+                    const { browser, os } = parseBrowserInfo(entry.userAgent);
+                    return (
+                      <div
+                        key={entry.id || index}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '0.75rem',
+                          padding: '0.85rem 0',
+                          borderBottom: index < loginHistory.length - 1 ? '1px solid var(--border-color, #e5e7eb)' : 'none'
+                        }}
+                      >
+                        <div style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '50%',
+                          background: index === 0 ? 'var(--primary-color, #2563eb)' : 'var(--bg-secondary, #f3f4f6)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={index === 0 ? '#fff' : 'currentColor'} strokeWidth="2">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                            <polyline points="10 17 15 12 10 7"></polyline>
+                            <line x1="15" y1="12" x2="3" y2="12"></line>
+                          </svg>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                              {index === 0 ? 'Current Session' : 'Login'}
+                            </span>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #6b7280)', whiteSpace: 'nowrap' }}>
+                              {formatLoginDate(entry.timestamp)}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary, #6b7280)', marginTop: '0.2rem' }}>
+                            {browser} &middot; {os}
+                          </div>
+                          {entry.screenResolution && (
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary, #9ca3af)', marginTop: '0.15rem' }}>
+                              Screen: {entry.screenResolution}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn-cancel" onClick={() => setShowLoginHistoryModal(false)}>
+                Close
               </button>
             </div>
           </div>
