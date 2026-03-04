@@ -86,12 +86,15 @@ class FirebaseService {
             const userCredential = await this.auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
             
-            // Send email verification
-            try {
-                await user.sendEmailVerification();
-            } catch (emailError) {
-                console.error('Error sending verification email:', emailError);
-                // Continue with registration even if email fails
+            // Send email verification only for client users (not admins/officers)
+            const userRole = userData.role || 'client';
+            if (userRole === 'client') {
+                try {
+                    await user.sendEmailVerification();
+                } catch (emailError) {
+                    console.error('Error sending verification email:', emailError);
+                    // Continue with registration even if email fails
+                }
             }
             
             // Prepare user document with Base64 ID data (if provided)
@@ -217,24 +220,17 @@ async sendPasswordReset(email) {
 
             await user.reauthenticateWithCredential(credential);
 
-            // Update email in Firebase Auth
-            await user.updateEmail(newEmail);
+            // Use verifyBeforeUpdateEmail to send a verification link to the new email
+            // The email will only be changed after the user clicks the verification link
+            await user.verifyBeforeUpdateEmail(newEmail);
 
-            // Send verification email for the new address
-            try {
-                await user.sendEmailVerification();
-            } catch (verifyErr) {
-                console.error('Failed to send verification email:', verifyErr);
-            }
-
-            // Update email in Firestore user document
+            // Store the pending email change in Firestore so UIcan show it
             await this.db.collection('users').doc(user.uid).update({
-                email: newEmail,
-                emailVerified: false,
-                emailUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                pendingEmail: newEmail,
+                emailUpdateRequestedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            return { success: true, message: 'Email updated successfully. Please verify your new email address.' };
+            return { success: true, message: 'A verification link has been sent to your new email. Your email will be updated after you verify it.' };
         } catch (error) {
             console.error('Change email error:', error);
             let errorMessage = 'Failed to change email';
@@ -247,6 +243,8 @@ async sendPasswordReset(email) {
                 errorMessage = 'This email address is already in use by another account';
             } else if (error.code === 'auth/requires-recent-login') {
                 errorMessage = 'Please log out and log in again before changing email';
+            } else if (error.code === 'auth/operation-not-allowed') {
+                errorMessage = 'Email change is not allowed. Please contact an administrator.';
             } else if (error.message) {
                 errorMessage = error.message;
             }

@@ -645,8 +645,7 @@ const OfficerProfile = ({ onProfilePictureUpdate }) => {
     try {
       const result = await firebaseService.changeEmail(emailForm.password, emailForm.newEmail);
       if (result.success) {
-        setProfileData(prev => ({ ...prev, email: emailForm.newEmail }));
-        showToast('Email changed successfully. Please verify your new email.', 'success');
+        showToast(result.message || 'A verification link has been sent to your new email. Your email will update after verification.', 'success');
         handleCloseEmailModal();
       } else {
         showToast(result.error || 'Failed to change email', 'error');

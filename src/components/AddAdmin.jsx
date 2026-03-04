@@ -34,6 +34,7 @@ const AddAdmin = () => {
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [editFormData, setEditFormData] = useState({});
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [toast, setToast] = useState({ message: '', type: '', isVisible: false });
 
   // Inline Toast component (simple)
@@ -265,6 +266,26 @@ const AddAdmin = () => {
   const handleResetPassword = (admin) => {
     setSelectedAdmin(admin);
     setShowResetPasswordModal(true);
+  };
+
+  const confirmResetPassword = async () => {
+    if (!selectedAdmin || !selectedAdmin.email) return;
+    try {
+      setIsResettingPassword(true);
+      const result = await firebaseService.sendPasswordReset(selectedAdmin.email);
+      if (result.success) {
+        setShowResetPasswordModal(false);
+        setSelectedAdmin(null);
+        setToast({ message: `Password reset email sent to ${selectedAdmin.email}`, type: 'success', isVisible: true });
+      } else {
+        throw new Error(result.error || 'Failed to send password reset email');
+      }
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      setToast({ message: 'Failed to send reset email: ' + (error.message || error), type: 'error', isVisible: true });
+    } finally {
+      setIsResettingPassword(false);
+    }
   };
 
   const handleToggleStatus = async (admin) => {
@@ -1109,8 +1130,10 @@ const AddAdmin = () => {
               </div>
             </div>
             <div style={styles.modalFooter}>
-              <button onClick={closeAllModals} style={{...styles.modalButton, ...styles.secondaryButton}}>Cancel</button>
-              <button style={{...styles.modalButton, background: '#f59e0b', color: 'white'}}>Reset Password</button>
+              <button onClick={closeAllModals} style={{...styles.modalButton, ...styles.secondaryButton}} disabled={isResettingPassword}>Cancel</button>
+              <button onClick={confirmResetPassword} disabled={isResettingPassword} style={{...styles.modalButton, background: '#f59e0b', color: 'white', opacity: isResettingPassword ? 0.7 : 1, cursor: isResettingPassword ? 'not-allowed' : 'pointer'}}>
+                {isResettingPassword ? 'Sending...' : 'Reset Password'}
+              </button>
             </div>
           </div>
         </div>

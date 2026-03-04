@@ -798,9 +798,8 @@ const AdminProfile = ({ onProfilePictureUpdate }) => {
       );
 
       if (result.success) {
-        // Update local profile data
-        setProfileData(prev => ({ ...prev, email: emailForm.newEmail }));
-        showToast('Email changed successfully. Please verify your new email.', 'success');
+        // Email will update after the user verifies the new email via the link sent
+        showToast(result.message || 'A verification link has been sent to your new email. Your email will update after verification.', 'success');
 
         // Record system activity
         try {
