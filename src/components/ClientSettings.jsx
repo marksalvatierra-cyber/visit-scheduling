@@ -3,55 +3,13 @@ import './Settings.css';
 import './shared.css';
 
 const getInitialClientSettings = () => {
-  const storedTheme = localStorage.getItem('dashboard-theme') || 'light';
   return {
-    profile: {
-      name: 'John Doe',
-      email: 'john.doe@email.com',
-      phone: '+1 (555) 123-4567',
-      profilePicture: null,
-      accountCreated: '2024-01-15',
-      lastLogin: '2024-08-06 09:30:00',
-      totalVisitRequests: 15,
-      approvedVisits: 12
-    },
-    visitPreferences: {
-      preferredTimeSlots: ['09:00-11:00', '14:00-16:00'],
-      autoFillBookingForms: true,
-      saveFrequentInmates: true,
-      defaultVisitDuration: 60,
-      reminderBeforeVisit: 24,
-      preferredNotificationMethod: 'email'
-    },
     notificationSettings: {
-      emailAlerts: true,
-      inAppNotifications: true,
-      smsNotifications: false,
-      visitApprovalAlerts: true,
-      visitRejectionAlerts: true,
-      visitReminderAlerts: true,
-      systemAnnouncementAlerts: true,
-      quietHoursEnabled: false,
-      quietHoursStart: '22:00',
-      quietHoursEnd: '08:00'
+      inAppNotifications: true
     },
     privacySecurity: {
-      showActivityLog: true,
-      allowDataSharing: false,
       twoFactorEnabled: false,
-      loginNotifications: true,
-      autoLogoutMinutes: 30,
-      hidePersonalInfoFromStaff: false,
-      dataRetentionPeriod: 365
-    },
-    appearance: {
-      theme: storedTheme,
-      language: 'english',
-      fontSize: 'medium',
-      compactMode: false,
-      showAnimations: true,
-      dateFormat: 'MM/DD/YYYY',
-      timeFormat: '12-hour'
+      loginNotifications: true
     }
   };
 };
@@ -364,19 +322,11 @@ const SlideoutPanel = ({ isOpen, onClose, setting, onSave, getTimeSlotOptions })
 
 const ClientSettings = () => {
   const [settings, setSettings] = useState(getInitialClientSettings);
-  const [selectedCategory, setSelectedCategory] = useState('visitPreferences');
   const [slideoutSetting, setSlideoutSetting] = useState(null);
   const [editingField, setEditingField] = useState(null);
   const [toast, setToast] = useState({ message: '', type: '', isVisible: false });
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-
-  const categories = [
-    { id: 'visitPreferences', name: 'Visit Preferences', icon: '📅' },
-    { id: 'notificationSettings', name: 'Notifications', icon: '🔔' },
-    { id: 'privacySecurity', name: 'Privacy & Security', icon: '🔒' },
-    { id: 'appearance', name: 'Appearance', icon: '🎨' }
-  ];
 
   // Add to history for undo functionality
   const addToHistory = (previousSettings) => {
@@ -399,23 +349,6 @@ const ClientSettings = () => {
   const showToast = (message, type = 'success') => {
     setToast({ message, type, isVisible: true });
   };
-
-  useEffect(() => {
-    const handleStorage = () => {
-      const storedTheme = localStorage.getItem('dashboard-theme');
-      if (storedTheme && storedTheme !== settings.appearance.theme) {
-        setSettings(prev => ({
-          ...prev,
-          appearance: {
-            ...prev.appearance,
-            theme: storedTheme
-          }
-        }));
-      }
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, [settings.appearance.theme]);
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -446,11 +379,6 @@ const ClientSettings = () => {
       }
     }));
     
-    if (category === 'appearance' && key === 'theme') {
-      localStorage.setItem('dashboard-theme', value);
-      window.dispatchEvent(new Event('storage'));
-    }
-
     showToast(`${getSettingLabel(key)} updated successfully`);
   };
 
@@ -476,53 +404,12 @@ const ClientSettings = () => {
 
   const getSettingLabel = (key) => {
     const labels = {
-      // Profile
-      name: 'Full Name',
-      email: 'Email Address',
-      phone: 'Phone Number',
-      profilePicture: 'Profile Picture',
-      accountCreated: 'Account Created',
-      lastLogin: 'Last Login',
-      totalVisitRequests: 'Total Visit Requests',
-      approvedVisits: 'Approved Visits',
-      
-      // Visit Preferences
-      preferredTimeSlots: 'Preferred Time Slots',
-      autoFillBookingForms: 'Auto-Fill Booking Forms',
-      saveFrequentInmates: 'Save Frequent Inmate Info',
-      defaultVisitDuration: 'Default Visit Duration (minutes)',
-      reminderBeforeVisit: 'Reminder Before Visit (hours)',
-      preferredNotificationMethod: 'Preferred Notification Method',
-      
       // Notification Settings
-      emailAlerts: 'Email Alerts',
-      inAppNotifications: 'In-App Notifications',
-      smsNotifications: 'SMS Notifications',
-      visitApprovalAlerts: 'Visit Approval Alerts',
-      visitRejectionAlerts: 'Visit Rejection Alerts',
-      visitReminderAlerts: 'Visit Reminder Alerts',
-      systemAnnouncementAlerts: 'System Announcement Alerts',
-      quietHoursEnabled: 'Quiet Hours Enabled',
-      quietHoursStart: 'Quiet Hours Start',
-      quietHoursEnd: 'Quiet Hours End',
+      inAppNotifications: 'In-App Alerts',
       
       // Privacy & Security
-      showActivityLog: 'Show Activity Log',
-      allowDataSharing: 'Allow Data Sharing',
       twoFactorEnabled: 'Two-Factor Authentication',
-      loginNotifications: 'Login Notifications',
-      autoLogoutMinutes: 'Auto Logout (minutes)',
-      hidePersonalInfoFromStaff: 'Hide Personal Info from Staff',
-      dataRetentionPeriod: 'Data Retention Period (days)',
-      
-      // Appearance
-      theme: 'Theme',
-      language: 'Language',
-      fontSize: 'Font Size',
-      compactMode: 'Compact Mode',
-      showAnimations: 'Show Animations',
-      dateFormat: 'Date Format',
-      timeFormat: 'Time Format'
+      loginNotifications: 'Login Notifications'
     };
     return labels[key] || key;
   };
@@ -530,49 +417,11 @@ const ClientSettings = () => {
   const getSettingType = (key, value) => {
     if (typeof value === 'boolean') return 'toggle';
     if (typeof value === 'number') return 'number';
-    if (key === 'preferredNotificationMethod' || key === 'theme' || key === 'language' || 
-        key === 'fontSize' || key === 'dateFormat' || key === 'timeFormat') return 'select';
-    if (key === 'preferredTimeSlots') return 'multiselect';
-    if (key === 'quietHoursStart' || key === 'quietHoursEnd') return 'time';
-    if (key === 'accountCreated' || key === 'lastLogin' || key === 'totalVisitRequests' || key === 'approvedVisits') return 'readonly';
-    if (key === 'profilePicture') return 'file';
     return 'text';
   };
 
-  const getSelectOptions = (key) => {
-    const options = {
-      preferredNotificationMethod: [
-        { value: 'email', label: 'Email' },
-        { value: 'sms', label: 'SMS' },
-        { value: 'both', label: 'Both Email & SMS' },
-        { value: 'app', label: 'In-App Only' }
-      ],
-      theme: [
-        { value: 'light', label: 'Light' },
-        { value: 'dark', label: 'Dark' },
-        { value: 'auto', label: 'Auto' }
-      ],
-      language: [
-        { value: 'english', label: 'English' },
-        { value: 'spanish', label: 'Spanish' },
-        { value: 'french', label: 'French' }
-      ],
-      fontSize: [
-        { value: 'small', label: 'Small' },
-        { value: 'medium', label: 'Medium' },
-        { value: 'large', label: 'Large' }
-      ],
-      dateFormat: [
-        { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY' },
-        { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY' },
-        { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD' }
-      ],
-      timeFormat: [
-        { value: '12-hour', label: '12-hour (AM/PM)' },
-        { value: '24-hour', label: '24-hour' }
-      ]
-    };
-    return options[key] || [];
+  const getSelectOptions = () => {
+    return [];
   };
 
   const getTimeSlotOptions = () => [
@@ -589,9 +438,22 @@ const ClientSettings = () => {
   };
 
   const isReadOnly = (key) => {
-    const readOnlyFields = ['accountCreated', 'lastLogin', 'totalVisitRequests', 'approvedVisits'];
+    const readOnlyFields = [];
     return readOnlyFields.includes(key);
   };
+
+  const combinedSettings = [
+    ...Object.entries(settings.notificationSettings).map(([key, value]) => ({
+      category: 'notificationSettings',
+      key,
+      value
+    })),
+    ...Object.entries(settings.privacySecurity).map(([key, value]) => ({
+      category: 'privacySecurity',
+      key,
+      value
+    }))
+  ];
 
   return (
     <div className="settings-page">
@@ -620,42 +482,17 @@ const ClientSettings = () => {
       </div>
 
       <div className="settings-content">
-        <div className="settings-sidebar">
-          <div className="sidebar-title">Settings Categories</div>
-          
-          <div className="category-list">
-            {categories.map(category => (
-              <div
-                key={category.id}
-                className={`category-item ${selectedCategory === category.id ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(category.id)}
-              >
-                <div className="category-icon">{category.icon}</div>
-                <div className="category-info">
-                  <div className="category-name">{category.name}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
         <div className="settings-main">
           <div className="settings-header">
-            <h2 className="settings-title">
-              {categories.find(c => c.id === selectedCategory)?.name}
-            </h2>
+            <h2 className="settings-title">Alerts & Privacy</h2>
             <p className="settings-description">
-              Click on any value to edit it directly, or use complex controls for advanced settings.
+              Manage your essential account alerts and security preferences.
             </p>
           </div>
           
           <div className="settings-grid">
-            {Object.entries(settings[selectedCategory])
-              .filter(([key]) =>
-                selectedCategory !== 'appearance' || (key !== 'theme' && key !== 'language')
-              )
-              .map(([key, value]) => (
-                <div key={key} className={`setting-item modern ${isReadOnly(key) ? 'readonly' : ''}`}>
+            {combinedSettings.map(({ category, key, value }) => (
+                <div key={`${category}.${key}`} className={`setting-item modern ${isReadOnly(key) ? 'readonly' : ''}`}>
                   <div className="setting-info">
                     <div className="setting-label">{getSettingLabel(key)}</div>
                     <div className="setting-description">
@@ -671,7 +508,7 @@ const ClientSettings = () => {
                     {getSettingType(key, value) === 'toggle' ? (
                       <button
                         className={`modern-toggle ${value ? 'active' : ''}`}
-                        onClick={() => handleSettingChange(selectedCategory, key, !value)}
+                        onClick={() => handleSettingChange(category, key, !value)}
                       >
                         <div className="toggle-slider"></div>
                         <span className="toggle-label">{value ? 'ON' : 'OFF'}</span>
@@ -685,7 +522,7 @@ const ClientSettings = () => {
                         </div>
                         <button
                           className="complex-edit-btn"
-                          onClick={() => openSlideout(selectedCategory, key, value)}
+                          onClick={() => openSlideout(category, key, value)}
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -697,13 +534,13 @@ const ClientSettings = () => {
                     ) : (
                       <InlineEditField
                         value={value}
-                        onSave={(newValue) => handleSettingChange(selectedCategory, key, newValue)}
+                        onSave={(newValue) => handleSettingChange(category, key, newValue)}
                         type={getSettingType(key, value)}
                         options={getSelectOptions(key)}
                         label={getSettingLabel(key)}
-                        isEditing={editingField === `${selectedCategory}.${key}`}
+                        isEditing={editingField === `${category}.${key}`}
                         setIsEditing={(editing) => 
-                          setEditingField(editing ? `${selectedCategory}.${key}` : null)
+                          setEditingField(editing ? `${category}.${key}` : null)
                         }
                         isReadOnly={isReadOnly(key)}
                       />
@@ -713,37 +550,6 @@ const ClientSettings = () => {
               ))}
           </div>
 
-          {selectedCategory === 'privacySecurity' && (
-            <div className="security-actions">
-              <h3>Security Actions</h3>
-              <div className="action-buttons">
-                <button className="action-btn danger">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="3,6 5,6 21,6"></polyline>
-                    <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1 2-2h4a2,2 0 0,1 2,2v2"></path>
-                  </svg>
-                  Request Account Deletion
-                </button>
-                <button className="action-btn secondary">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14,2 14,8 20,8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                    <polyline points="10,9 9,9 8,9"></polyline>
-                  </svg>
-                  Download My Data
-                </button>
-                <button className="action-btn secondary">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M9 12l2 2 4-4"></path>
-                    <circle cx="12" cy="12" r="9"></circle>
-                  </svg>
-                  View Activity Log
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

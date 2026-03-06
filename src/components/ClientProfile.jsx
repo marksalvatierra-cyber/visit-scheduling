@@ -559,6 +559,11 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
   const [emailErrors, setEmailErrors] = useState({});
   const [isChangingEmail, setIsChangingEmail] = useState(false);
   const [showEmailPassword, setShowEmailPassword] = useState(false);
+  const [profilePreferences, setProfilePreferences] = useState({
+    inAppNotifications: true,
+    twoFactorEnabled: false,
+    loginNotifications: true
+  });
 
   useEffect(() => {
     const runLoadProfile = async () => {
@@ -614,6 +619,18 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
     runLoadProfile();
   }, []);
 
+  useEffect(() => {
+    const storedPreferences = localStorage.getItem('client-profile-preferences');
+    if (storedPreferences) {
+      try {
+        const parsedPreferences = JSON.parse(storedPreferences);
+        setProfilePreferences(prev => ({ ...prev, ...parsedPreferences }));
+      } catch (error) {
+        console.error('Failed to parse stored client preferences:', error);
+      }
+    }
+  }, []);
+
   // Global keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -642,6 +659,15 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
   // Show toast notification
   const showToast = (message, type = 'success') => {
     setToast({ message, type, isVisible: true });
+  };
+
+  const handlePreferenceToggle = (key) => {
+    setProfilePreferences(prev => {
+      const updated = { ...prev, [key]: !prev[key] };
+      localStorage.setItem('client-profile-preferences', JSON.stringify(updated));
+      return updated;
+    });
+    showToast('Preference updated successfully!', 'success');
   };
 
   const handleFieldSave = async (fieldName, newValue) => {
@@ -1303,6 +1329,81 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
                   isReupload={!!verificationStatus.idFile}
                 />
               )}
+            </div>
+          </div>
+
+          <div className="profile-section">
+            <div className="section-header">
+              <h3 className="section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                Alerts & Privacy
+              </h3>
+            </div>
+            <div className="section-content">
+              <div className="field-grid">
+                <div className="field-item">
+                  <label className="field-label">In-App Alerts</label>
+                  <button
+                    type="button"
+                    onClick={() => handlePreferenceToggle('inAppNotifications')}
+                    style={{
+                      minHeight: '38px',
+                      padding: '8px 12px',
+                      borderRadius: '10px',
+                      border: '1px solid #dbe3f0',
+                      background: profilePreferences.inAppNotifications ? '#e0e7ff' : '#ffffff',
+                      color: profilePreferences.inAppNotifications ? '#3730a3' : '#4b5563',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {profilePreferences.inAppNotifications ? 'Enabled' : 'Disabled'}
+                  </button>
+                </div>
+
+                <div className="field-item">
+                  <label className="field-label">Two-Factor Authentication</label>
+                  <button
+                    type="button"
+                    onClick={() => handlePreferenceToggle('twoFactorEnabled')}
+                    style={{
+                      minHeight: '38px',
+                      padding: '8px 12px',
+                      borderRadius: '10px',
+                      border: '1px solid #dbe3f0',
+                      background: profilePreferences.twoFactorEnabled ? '#e0e7ff' : '#ffffff',
+                      color: profilePreferences.twoFactorEnabled ? '#3730a3' : '#4b5563',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {profilePreferences.twoFactorEnabled ? 'Enabled' : 'Disabled'}
+                  </button>
+                </div>
+
+                <div className="field-item">
+                  <label className="field-label">Login Notifications</label>
+                  <button
+                    type="button"
+                    onClick={() => handlePreferenceToggle('loginNotifications')}
+                    style={{
+                      minHeight: '38px',
+                      padding: '8px 12px',
+                      borderRadius: '10px',
+                      border: '1px solid #dbe3f0',
+                      background: profilePreferences.loginNotifications ? '#e0e7ff' : '#ffffff',
+                      color: profilePreferences.loginNotifications ? '#3730a3' : '#4b5563',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {profilePreferences.loginNotifications ? 'Enabled' : 'Disabled'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

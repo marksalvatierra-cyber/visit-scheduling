@@ -5,7 +5,6 @@ import { Filler } from 'chart.js/auto';
 import { Line, Bar } from 'react-chartjs-2';
 import Profile from './AdminProfile';
 import ClientProfile from './ClientProfile';
-import Settings from './ClientSettings';
 import VisitRequests from './VisitRequests';
 import Schedule from './Schedule';
 import VisitLogs from './VisitLogs';
@@ -194,7 +193,6 @@ const ClientDashboard = () => {
     if (path.includes('/schedule')) return 'schedule';
     if (path.includes('/visitlogs')) return 'visitlogs';
     if (path.includes('/notifications')) return 'notifications';
-    if (path.includes('/settings')) return 'settings';
     if (path.includes('/profile')) return 'profile';
     return 'dashboard';
   };
@@ -524,13 +522,6 @@ const ClientDashboard = () => {
                 </svg>
                 My Profile
               </div>
-              <div className="dropdown-item" onClick={() => handleNavigation('settings')}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="3"></circle>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                </svg>
-                Settings
-              </div>
               <div className="dropdown-divider"></div>
               <div className="dropdown-item logout" onClick={handleSignOut}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -607,15 +598,6 @@ const ClientDashboard = () => {
                   {notifications.length > 0 && (
                     <span className="nav-badge">{notifications.length}</span>
                   )}
-                </button>
-              </li>
-              <li className={`nav-item ${getCurrentPage() === 'settings' ? 'active' : ''}`}>
-                <button className="nav-link" onClick={() => handleNavigation('settings')}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                  </svg>
-                  <span className="nav-text">Settings</span>
                 </button>
               </li>
             </ul>
@@ -853,7 +835,7 @@ const ClientDashboard = () => {
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/visitlogs" element={<VisitLogs />} />
           <Route path="/notifications" element={<ClientNotifications />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/settings" element={<Navigate to="/client/profile" replace />} />
           <Route path="/profile" element={<ClientProfile onProfilePictureUpdate={updateProfilePicture} />} />
           <Route path="/" element={<Navigate to="/client/dashboard" replace />} />
         </Routes>
