@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Filler } from 'chart.js/auto';
@@ -45,6 +45,11 @@ const ClientDashboard = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [unsubscribeNotifications, setUnsubscribeNotifications] = useState(null);
+  const [isMobileView, setIsMobileView] = useState(
+    typeof window !== 'undefined' ? window.innerWidth <= 768 : false
+  );
+  const statsScrollerRef = useRef(null);
+  const isAdjustingScrollRef = useRef(false);
 
   // Load dashboard data on component mount
   useEffect(() => {
@@ -270,6 +275,135 @@ const ClientDashboard = () => {
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, [showAvatarDropdown, showBellDropdown]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth <= 768);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const scroller = statsScrollerRef.current;
+    if (!scroller || !isMobileView) return;
+
+    requestAnimationFrame(() => {
+      const segmentWidth = scroller.scrollWidth / 3;
+      if (segmentWidth > 0) {
+        scroller.scrollLeft = segmentWidth;
+      }
+    });
+  }, [
+    isMobileView,
+    dashboardStats.approved,
+    dashboardStats.pending,
+    dashboardStats.rescheduled,
+    dashboardStats.rejected,
+  ]);
+
+  useEffect(() => {
+    const scroller = statsScrollerRef.current;
+    if (!scroller || !isMobileView) return;
+
+    const handleLoopingScroll = () => {
+      if (isAdjustingScrollRef.current) return;
+
+      const segmentWidth = scroller.scrollWidth / 3;
+      if (!segmentWidth) return;
+
+      if (scroller.scrollLeft < segmentWidth * 0.5) {
+        isAdjustingScrollRef.current = true;
+        scroller.scrollLeft += segmentWidth;
+        requestAnimationFrame(() => {
+          isAdjustingScrollRef.current = false;
+        });
+      } else if (scroller.scrollLeft > segmentWidth * 1.5) {
+        isAdjustingScrollRef.current = true;
+        scroller.scrollLeft -= segmentWidth;
+        requestAnimationFrame(() => {
+          isAdjustingScrollRef.current = false;
+        });
+      }
+    };
+
+    scroller.addEventListener('scroll', handleLoopingScroll, { passive: true });
+    return () => scroller.removeEventListener('scroll', handleLoopingScroll);
+  }, [isMobileView]);
+
+  const statCards = [
+    {
+      key: 'approved',
+      cardClass: 'approved',
+      filter: 'approved',
+      value: dashboardStats.approved,
+      label: 'Approved',
+      change: '+5% from last month',
+      changeClass: 'positive',
+      dotColor: '#10b981',
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <polyline points="20,6 9,17 4,12"></polyline>
+        </svg>
+      ),
+    },
+    {
+      key: 'pending',
+      cardClass: 'pending',
+      filter: 'pending',
+      value: dashboardStats.pending,
+      label: 'Pending',
+      change: '+2% from last month',
+      changeClass: 'neutral',
+      dotColor: '#f59e0b',
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12,6 12,12 16,14"></polyline>
+        </svg>
+      ),
+    },
+    {
+      key: 'rescheduled',
+      cardClass: 'reschedule',
+      filter: 'rescheduled',
+      value: dashboardStats.rescheduled,
+      label: 'Rescheduled',
+      change: '-1% from last month',
+      changeClass: 'negative',
+      dotColor: '#8b5cf6',
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+      ),
+    },
+    {
+      key: 'rejected',
+      cardClass: 'rejected',
+      filter: 'rejected',
+      value: dashboardStats.rejected,
+      label: 'Rejected',
+      change: '+3% from last month',
+      changeClass: 'negative',
+      dotColor: '#ef4444',
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      ),
+    },
+  ];
+
+  const renderedStatCards = isMobileView
+    ? [...statCards, ...statCards, ...statCards]
+    : statCards;
 
 
   return (
@@ -632,103 +766,33 @@ const ClientDashboard = () => {
               
               {/* Modern Stats Cards */}
               <section className="modern-stats-section">
-                <div className="modern-stats-grid">
-                  <div className="modern-stat-card approved" onClick={() => handleNavigation('visitlogs', 'filter=approved')}>
-                    <div className="modern-stat-header">
-                      <div className="modern-stat-icon">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="20,6 9,17 4,12"></polyline>
-                      </svg>
+                <div className="modern-stats-grid" ref={statsScrollerRef}>
+                  {renderedStatCards.map((card, index) => (
+                    <div
+                      key={`${card.key}-${index}`}
+                      className={`modern-stat-card ${card.cardClass}`}
+                      onClick={() => handleNavigation('visitlogs', `filter=${card.filter}`)}
+                    >
+                      <div className="modern-stat-header">
+                        <div className="modern-stat-icon">{card.icon}</div>
+                        <div className="modern-stat-status">
+                          <div
+                            style={{
+                              width: '8px',
+                              height: '8px',
+                              borderRadius: '50%',
+                              background: card.dotColor,
+                            }}
+                          ></div>
+                        </div>
                       </div>
-                      <div className="modern-stat-status">
-                        <div style={{
-                          width: '8px',
-                          height: '8px',
-                          borderRadius: '50%',
-                          background: '#10b981'
-                        }}></div>
-                      </div>
-                    </div>
-                    <div className="modern-stat-content">
-                      <div className="modern-stat-value">{dashboardStats.approved}</div>
-                      <div className="modern-stat-label">Approved</div>
-                      <div className="modern-stat-change positive">+5% from last month</div>
-                    </div>
-                  </div>
-
-                  <div className="modern-stat-card pending" onClick={() => handleNavigation('visitlogs', 'filter=pending')}>
-                    <div className="modern-stat-header">
-                      <div className="modern-stat-icon">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12,6 12,12 16,14"></polyline>
-                      </svg>
-                    </div>
-                      <div className="modern-stat-status">
-                        <div style={{
-                          width: '8px',
-                          height: '8px',
-                          borderRadius: '50%',
-                          background: '#f59e0b'
-                        }}></div>
+                      <div className="modern-stat-content">
+                        <div className="modern-stat-value">{card.value}</div>
+                        <div className="modern-stat-label">{card.label}</div>
+                        <div className={`modern-stat-change ${card.changeClass}`}>{card.change}</div>
                       </div>
                     </div>
-                    <div className="modern-stat-content">
-                      <div className="modern-stat-value">{dashboardStats.pending}</div>
-                      <div className="modern-stat-label">Pending</div>
-                      <div className="modern-stat-change neutral">+2% from last month</div>
-                    </div>
-                  </div>
-
-                  <div className="modern-stat-card reschedule" onClick={() => handleNavigation('visitlogs', 'filter=rescheduled')}>
-                    <div className="modern-stat-header">
-                      <div className="modern-stat-icon">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                      </svg>
-                    </div>
-                      <div className="modern-stat-status">
-                        <div style={{
-                          width: '8px',
-                          height: '8px',
-                          borderRadius: '50%',
-                          background: '#8b5cf6'
-                        }}></div>
-                      </div>
-                    </div>
-                    <div className="modern-stat-content">
-                      <div className="modern-stat-value">{dashboardStats.rescheduled}</div>
-                      <div className="modern-stat-label">Rescheduled</div>
-                      <div className="modern-stat-change negative">-1% from last month</div>
-                    </div>
-                  </div>
-
-                  <div className="modern-stat-card rejected" onClick={() => handleNavigation('visitlogs', 'filter=rejected')}>
-                    <div className="modern-stat-header">
-                      <div className="modern-stat-icon">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                      </svg>
-                    </div>
-                      <div className="modern-stat-status">
-                        <div style={{
-                          width: '8px',
-                          height: '8px',
-                          borderRadius: '50%',
-                          background: '#ef4444'
-                        }}></div>
-                      </div>
-                    </div>
-                    <div className="modern-stat-content">
-                      <div className="modern-stat-value">{dashboardStats.rejected}</div>
-                      <div className="modern-stat-label">Rejected</div>
-                      <div className="modern-stat-change negative">+3% from last month</div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </section>
 

@@ -211,10 +211,25 @@
     flex-direction: column;
     align-items: stretch;
     gap: 0.75rem;
-    padding: 1rem;
+    position: relative;
+    padding: 1rem 0.9rem 0.95rem;
     margin-bottom: 1rem;
     overflow: hidden;
     min-width: 0;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    background: linear-gradient(165deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  }
+
+  .modern-records-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #6366f1, #3b82f6);
   }
 
   .modern-records-title {
@@ -223,40 +238,102 @@
     white-space: normal;
     overflow-wrap: anywhere;
     word-break: break-word;
-    font-size: 1rem;
-    line-height: 1.35;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    font-weight: 700;
+    color: #111827;
     align-items: flex-start;
     gap: 0.5rem;
   }
 
   .modern-records-title svg {
-    margin-top: 2px;
+    margin-top: 1px;
     flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    padding: 4px;
+    border-radius: 8px;
+    background: #eef2ff;
+    color: #4f46e5;
+    box-sizing: content-box;
   }
 
   .modern-welcome-actions {
     flex-direction: column;
     width: 100%;
     min-width: 0;
+    gap: 0.55rem;
   }
 
   .modern-btn-primary,
   .modern-btn-secondary {
     width: 100%;
     justify-content: center;
+    border-radius: 12px;
+    min-height: 42px;
+    font-size: 0.83rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  .modern-btn-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    box-shadow: 0 8px 16px rgba(79, 70, 229, 0.25);
+  }
+
+  .modern-btn-secondary {
+    background: #ffffff;
+    border: 1px solid #dbe3f0;
+    color: #4f46e5;
   }
 
   .modern-stats-grid {
-    grid-template-columns: 1fr;
-    gap: 0.9rem;
+    display: flex;
+    grid-template-columns: none;
+    gap: 0.55rem;
+    min-height: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.15rem 0.1rem 0.3rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
   }
 
   .modern-stat-card {
-    padding: 1rem;
+    flex: 0 0 calc(48% - 0.28rem);
+    padding: 0.75rem;
+    min-height: 96px;
+    scroll-snap-align: start;
+  }
+
+  .modern-stat-value {
+    font-size: 1.35rem;
+  }
+
+  .modern-stat-label {
+    font-size: 0.76rem;
+  }
+
+  .modern-stat-change {
+    font-size: 0.66rem;
   }
 
   .modern-stat-card::after {
     display: none;
+  }
+
+  .modern-stats-grid::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .modern-stats-grid::-webkit-scrollbar-track {
+    background: #e5e7eb;
+    border-radius: 999px;
+  }
+
+  .modern-stats-grid::-webkit-scrollbar-thumb {
+    background: #9ca3af;
+    border-radius: 999px;
   }
 
   .modern-charts-grid {
@@ -338,10 +415,37 @@
   }
 
   .modern-records-title {
-    font-size: 0.92rem;
+    font-size: 0.88rem;
+  }
+
+  .modern-records-title svg {
+    width: 15px;
+    height: 15px;
+    padding: 3px;
+  }
+
+  .modern-btn-primary,
+  .modern-btn-secondary {
+    min-height: 40px;
+    font-size: 0.8rem;
   }
 
   .modern-chart-container {
     height: 180px;
+  }
+
+  .modern-stats-grid {
+    gap: 0.65rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .modern-stat-card {
+    flex-basis: calc(48% - 0.32rem);
+    padding: 0.65rem;
+    min-height: 90px;
+  }
+
+  .modern-stat-value {
+    font-size: 1.2rem;
   }
 }
