@@ -175,6 +175,7 @@ const ClientDashboard = () => {
   };
 
   const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
+  const isSidebarOpen = !sidebarCollapsed;
   const handleNavigation = (page, queryParams = '') => {
     if (queryParams) {
       navigate(`/client/${page}?${queryParams}`);
@@ -409,7 +410,11 @@ const ClientDashboard = () => {
         </div>
       </header>
       {/* Sidebar */}
-      <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+      <div
+        className={`mobile-sidebar-overlay ${isSidebarOpen ? 'show' : ''}`}
+        onClick={toggleSidebar}
+      ></div>
+      <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${isSidebarOpen ? 'show' : ''}`}>
         <div className="sidebar-header">
           <div className="logo-container">
             <img src="/image/12.png" alt="Central Prison Camp Sablayan Penal Farm Logo" className="sidebar-logo" />
@@ -541,7 +546,9 @@ const ClientDashboard = () => {
 
               {/* Verification Status Banner */}
               {userProfile && userProfile.profileStatus !== 'verified' && (
-                <div style={{
+                <div
+                  className="verification-banner"
+                  style={{
                   marginBottom: '24px',
                   padding: '20px',
                   borderRadius: '12px',
@@ -551,7 +558,7 @@ const ClientDashboard = () => {
                   alignItems: 'flex-start',
                   gap: '16px'
                 }}>
-                  <div style={{
+                  <div className="verification-banner-icon" style={{
                     padding: '8px',
                     borderRadius: '8px',
                     background: userProfile.profileStatus === 'rejected' ? '#fee2e2' : '#fef3c7',
@@ -565,7 +572,7 @@ const ClientDashboard = () => {
                       <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div className="verification-banner-content" style={{ flex: 1 }}>
                     <h3 style={{
                       margin: '0 0 8px 0',
                       fontSize: '18px',
@@ -594,6 +601,7 @@ const ClientDashboard = () => {
                     </p>
                     {userProfile.profileStatus === 'rejected' && (
                       <button
+                        className="verification-banner-action"
                         onClick={() => handleNavigation('profile')}
                         style={{
                           padding: '8px 16px',

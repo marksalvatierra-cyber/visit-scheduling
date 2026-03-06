@@ -18,7 +18,7 @@ function About() {
     <div style={{ 
       background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
       minHeight: 'calc(100vh - 200px)',
-      padding: '2rem 1rem'
+      padding: '1.5rem 0.75rem'
     }}>
       <div style={{ 
         maxWidth: '1400px', 
@@ -53,21 +53,21 @@ function About() {
         {/* Two Column Layout */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '2rem',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: '1.25rem',
           marginBottom: '2rem'
         }}>
           {/* Left Column - Primary Objectives */}
           <div style={{
             background: 'white',
             borderRadius: '15px',
-            padding: '2rem',
+            padding: '1.25rem',
             boxShadow: '0 5px 20px rgba(0,0,0,0.08)'
           }}>
             <h2 style={{ 
-              fontSize: '1.8rem', 
+              fontSize: 'clamp(1.35rem, 4.2vw, 1.8rem)', 
               fontWeight: '700',
-              marginBottom: '1.5rem',
+              marginBottom: '1.1rem',
               color: '#2d3748',
               textAlign: 'center'
             }}>
@@ -110,32 +110,33 @@ function About() {
               ].map((objective, index) => (
                 <div key={index} style={{
                   background: 'linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%)',
-                  padding: '1.2rem',
+                  padding: '0.9rem',
                   borderRadius: '10px',
                   display: 'flex',
-                  gap: '1rem',
-                  alignItems: 'center',
+                  gap: '0.75rem',
+                  alignItems: 'flex-start',
                   border: '1px solid #e2e8f0',
                   transition: 'all 0.3s ease'
                 }}>
                   <div style={{ 
-                    fontSize: '2rem',
-                    minWidth: '50px',
+                    fontSize: '1.5rem',
+                    minWidth: '36px',
                     textAlign: 'center'
                   }}>
                     {objective.icon}
                   </div>
                   <div style={{ flex: 1 }}>
                     <h3 style={{ 
-                      fontSize: '1.1rem',
+                      fontSize: '0.98rem',
                       fontWeight: '600',
                       color: '#2d3748',
-                      marginBottom: '0.3rem'
+                      marginBottom: '0.25rem',
+                      lineHeight: '1.3'
                     }}>
                       {objective.title}
                     </h3>
                     <p style={{ 
-                      fontSize: '0.9rem',
+                      fontSize: '0.82rem',
                       lineHeight: '1.5',
                       color: '#4a5568',
                       margin: 0
@@ -152,11 +153,11 @@ function About() {
           <div style={{
             background: 'white',
             borderRadius: '15px',
-            padding: '2rem',
+            padding: '1.25rem',
             boxShadow: '0 5px 20px rgba(0,0,0,0.08)'
           }}>
             <h2 style={{ 
-              fontSize: '1.8rem', 
+              fontSize: 'clamp(1.35rem, 4.2vw, 1.8rem)', 
               fontWeight: '700',
               marginBottom: '1rem',
               color: '#2d3748',
@@ -209,10 +210,11 @@ function About() {
               ].map((feature, index) => (
                 <div key={index} style={{
                   background: 'linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%)',
-                  padding: '1.2rem',
+                  padding: '1rem',
                   borderRadius: '10px',
                   display: 'flex',
-                  gap: '1rem',
+                  gap: '0.75rem',
+                  alignItems: 'flex-start',
                   border: '1px solid #e2e8f0',
                   position: 'relative',
                   overflow: 'hidden'
@@ -226,14 +228,14 @@ function About() {
                     background: feature.gradient
                   }} />
                   <div style={{
-                    minWidth: '45px',
-                    height: '45px',
+                    minWidth: '40px',
+                    height: '40px',
                     borderRadius: '50%',
                     background: feature.gradient,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '1.5rem',
+                    fontSize: '1.2rem',
                     flexShrink: 0
                   }}>
                     {feature.icon}
@@ -242,14 +244,16 @@ function About() {
                     <div style={{
                       display: 'flex',
                       alignItems: 'baseline',
+                      flexWrap: 'wrap',
                       gap: '0.5rem',
                       marginBottom: '0.3rem'
                     }}>
                       <h3 style={{ 
-                        fontSize: '1.1rem',
+                        fontSize: '0.98rem',
                         fontWeight: '600',
                         color: '#2d3748',
-                        margin: 0
+                        margin: 0,
+                        lineHeight: '1.3'
                       }}>
                         {feature.title}
                       </h3>
@@ -262,7 +266,7 @@ function About() {
                       </span>
                     </div>
                     <p style={{ 
-                      fontSize: '0.9rem',
+                      fontSize: '0.82rem',
                       lineHeight: '1.5',
                       color: '#4a5568',
                       margin: 0

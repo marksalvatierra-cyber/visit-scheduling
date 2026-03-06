@@ -465,18 +465,20 @@
 
   /* Hero Content - Full width, clean vertical layout */
   .hero-content {
-    padding: 2.5rem 1.5rem;
+    padding: 2rem 1rem;
     order: 1;
   }
 
   .hero-title {
-    font-size: 2rem;
+    font-size: 1.75rem;
     text-align: left;
+    line-height: 1.25;
   }
 
   .hero-description {
-    font-size: 1rem;
+    font-size: 0.95rem;
     text-align: left;
+    line-height: 1.6;
   }
 
   .hero-cta-group {
@@ -488,6 +490,8 @@
   .hero-btn-secondary {
     width: 100%;
     justify-content: center;
+    padding: 0.85rem 1rem;
+    font-size: 0.95rem;
   }
 
   /* Tips section */
@@ -498,20 +502,156 @@
   /* DateTime Widget - Below content */
   .datetime-widget {
     order: 2;
-    padding: 2rem 1.5rem 2.5rem;
+    padding: 1.25rem 0.75rem 1.75rem 1.25rem;
     background: #f9fafb;
   }
 
   .datetime-card {
-    max-width: 100%;
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 1rem;
+  }
+
+  .calendar-month {
+    font-size: 0.9rem;
+  }
+
+  .calendar-nav-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  .calendar-weekday {
+    font-size: 0.72rem;
+    padding: 0.3rem 0;
   }
 
   /* Calendar styling adjustments */
   .calendar-grid {
-    gap: 0.3rem;
+    gap: 0.25rem;
   }
 
   .calendar-day {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
+    min-height: 32px;
+  }
+
+  .selected-date-info {
+    font-size: 0.78rem;
+  }
+
+  .time-label {
+    font-size: 0.78rem;
+  }
+
+  .time-input {
+    padding: 0.65rem 0.8rem;
+    font-size: 0.9rem;
+  }
+
+  .datetime-cta {
+    padding: 0.8rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .hero-content {
+    padding: 1.5rem 0.9rem;
+    gap: 1rem;
+  }
+
+  .hero-title {
+    font-size: 1.45rem;
+  }
+
+  .hero-description {
+    font-size: 0.9rem;
+  }
+
+  .hero-tips {
+    padding: 0.85rem 1rem;
+  }
+
+  .tips-heading {
+    font-size: 0.82rem;
+  }
+
+  .tips-list li {
+    font-size: 0.78rem;
+  }
+
+  .datetime-widget {
+    padding: 1rem 0.6rem 1.25rem 1rem;
+  }
+
+  .datetime-card {
+    border-radius: 12px;
+    padding: 0.95rem;
+    gap: 0.65rem;
+    max-width: 100%;
+  }
+
+  .calendar-month {
+    font-size: 0.9rem;
+  }
+
+  .calendar-nav-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  .calendar-weekday {
+    font-size: 0.72rem;
+  }
+
+  .calendar-grid {
+    gap: 0.2rem;
+  }
+
+  .calendar-day {
+    font-size: 0.78rem;
+    min-height: 30px;
+  }
+
+  .time-label {
+    font-size: 0.76rem;
+  }
+
+  .time-input {
+    padding: 0.62rem 0.75rem;
+    font-size: 0.86rem;
+  }
+
+  .datetime-cta {
+    padding: 0.78rem;
+    font-size: 0.88rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .hero-title {
+    font-size: 1.25rem;
+  }
+
+  .hero-description {
+    font-size: 0.85rem;
+  }
+
+  .hero-btn-primary,
+  .hero-btn-secondary {
+    padding: 0.75rem 0.85rem;
+    font-size: 0.88rem;
+  }
+
+  .calendar-day {
+    font-size: 0.72rem;
+    min-height: 28px;
+    border-radius: 4px;
+  }
+
+  .selected-date-info {
+    font-size: 0.72rem;
   }
 }
