@@ -6,7 +6,7 @@ import './shared.css';
 import { useSearchParams } from 'react-router-dom';
 
 const VisitRequests = ({ currentOfficer = null }) => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [visitRequests, setVisitRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

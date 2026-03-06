@@ -333,22 +333,22 @@ const VisitLogs = () => {
               <tbody>
                 {filteredVisits.map(v => (
                   <tr key={v.id}>
-                    <td>
+                    <td data-label="Visit Date">
                       <div style={{ fontWeight: '500' }}>
                         {formatDate(v.date)}
                       </div>
                     </td>
-                    <td>
+                    <td data-label="Time">
                       <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>
                         {formatTime(v.time)}
                       </div>
                     </td>
-                    <td>
+                    <td data-label="Inmate">
                       <div style={{ fontWeight: '500' }}>
                         {v.inmate}
                       </div>
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <span className={`status ${v.status}`}>
                           {v.status.charAt(0).toUpperCase() + v.status.slice(1)}
@@ -369,8 +369,8 @@ const VisitLogs = () => {
                         )}
                       </div>
                     </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                    <td data-label="Actions">
+                      <div className="visit-actions-row" style={{ display: 'flex', gap: '8px' }}>
                         <button className="view-btn" onClick={() => setSelectedVisit(v)}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -428,7 +428,14 @@ const VisitLogs = () => {
       {/* Modern Landscape Visit Details Modal */}
       {selectedVisit && (
         <div className="modern-modal-overlay" onClick={() => setSelectedVisit(null)}>
-          <div className="modern-modal-container landscape" onClick={e => e.stopPropagation()}>
+          <div className="modern-modal-container landscape visitlogs-detail-modal" onClick={e => e.stopPropagation()}>
+            <button
+              className="visitlogs-modal-close"
+              onClick={() => setSelectedVisit(null)}
+              aria-label="Close details"
+            >
+              ×
+            </button>
             <div className="modern-modal-body">
               {/* Left Side - Visitor Information */}
               <div className="modern-modal-section">
@@ -687,8 +694,18 @@ const VisitLogs = () => {
       {/* Cancellation Modal */}
       {showCancelModal && selectedVisit && (
         <div className="modern-modal-overlay" onClick={() => setShowCancelModal(false)}>
-          <div className="modern-modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
-            <div style={{ padding: '24px' }}>
+          <div className="modern-modal-container visitlogs-cancel-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <button
+              className="visitlogs-modal-close"
+              onClick={() => {
+                setShowCancelModal(false);
+                setCancellationReason('');
+              }}
+              aria-label="Close cancel dialog"
+            >
+              ×
+            </button>
+            <div className="visitlogs-cancel-content" style={{ padding: '24px' }}>
               <h2 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: '600', color: '#111827' }}>
                 Cancel Visit Request
               </h2>
@@ -701,6 +718,7 @@ const VisitLogs = () => {
                   Cancellation Reason
                 </label>
                 <textarea
+                  className="visitlogs-cancel-textarea"
                   value={cancellationReason}
                   onChange={(e) => setCancellationReason(e.target.value)}
                   placeholder="e.g., Unable to make it due to personal reasons..."
@@ -717,8 +735,9 @@ const VisitLogs = () => {
                 />
               </div>
               
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <div className="visitlogs-cancel-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
                 <button
+                  className="visitlogs-cancel-keep"
                   onClick={() => {
                     setShowCancelModal(false);
                     setCancellationReason('');
@@ -738,6 +757,7 @@ const VisitLogs = () => {
                   Keep Visit
                 </button>
                 <button
+                  className="visitlogs-cancel-confirm"
                   onClick={handleCancelRequest}
                   disabled={cancelling || !cancellationReason.trim()}
                   style={{

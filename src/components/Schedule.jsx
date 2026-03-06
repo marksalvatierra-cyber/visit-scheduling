@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import firebaseService from '../firebase-services';
 import './Schedule.css';
@@ -17,10 +17,8 @@ const Toast = ({ message, type, isVisible, onClose }) => {
   if (!isVisible) return null;
 
   return (
-    <div style={{
+    <div className="schedule-toast" style={{
       position: 'fixed',
-      top: '20px',
-      right: '20px',
       background: type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6',
       color: 'white',
       padding: '16px 20px',
@@ -32,7 +30,6 @@ const Toast = ({ message, type, isVisible, onClose }) => {
       gap: '8px',
       fontSize: '14px',
       fontWeight: '500',
-      minWidth: '320px',
       animation: 'slideInRight 0.3s ease-out'
     }}>
       <style>
@@ -104,6 +101,36 @@ const Schedule = () => {
   const [userProfile, setUserProfile] = useState(null);
   const [checkingVerification, setCheckingVerification] = useState(true);
 
+  // Validate inmate number function
+  const validateInmateNumber = useCallback(async (inmateNumber) => {
+    if (!inmateNumber.trim()) {
+      setInmateValidation({ isValid: null, inmateName: '', status: '' });
+      return;
+    }
+
+    setValidatingInmate(true);
+    try {
+      const foundInmate = inmates.find(inmate => 
+        inmate.inmateNumber && inmate.inmateNumber.toLowerCase() === inmateNumber.toLowerCase()
+      );
+      
+      if (foundInmate) {
+        if (foundInmate.status === 'active') {
+          setInmateValidation({ isValid: true, inmateName: foundInmate.name, status: 'active' });
+        } else {
+          setInmateValidation({ isValid: false, inmateName: foundInmate.name, status: 'inactive' });
+        }
+      } else {
+        setInmateValidation({ isValid: false, inmateName: '', status: '' });
+      }
+    } catch (error) {
+      console.error('Error validating inmate number:', error);
+      setInmateValidation({ isValid: false, inmateName: '', status: '' });
+    } finally {
+      setValidatingInmate(false);
+    }
+  }, [inmates]);
+
   // Load inmates and check verification on component mount
   useEffect(() => {
     loadInmates();
@@ -150,14 +177,14 @@ const Schedule = () => {
         validateInmateNumber(requestToEdit.inmateNumber);
       }
     }
-  }, [location.state, inmates]);
+  }, [location.state, inmates, validateInmateNumber]);
 
   // Validate inmate number when inmates are loaded and there's an input
   useEffect(() => {
     if (inmates.length > 0 && form.inmateNumber.trim()) {
       validateInmateNumber(form.inmateNumber);
     }
-  }, [inmates]);
+  }, [inmates, form.inmateNumber, validateInmateNumber]);
 
   // Show toast notification
   const showToast = (message, type = 'success') => {
@@ -180,36 +207,6 @@ const Schedule = () => {
       setError('Failed to load inmates. Please try again.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Validate inmate number function
-  const validateInmateNumber = async (inmateNumber) => {
-    if (!inmateNumber.trim()) {
-      setInmateValidation({ isValid: null, inmateName: '', status: '' });
-      return;
-    }
-
-    setValidatingInmate(true);
-    try {
-      const foundInmate = inmates.find(inmate => 
-        inmate.inmateNumber && inmate.inmateNumber.toLowerCase() === inmateNumber.toLowerCase()
-      );
-      
-      if (foundInmate) {
-        if (foundInmate.status === 'active') {
-          setInmateValidation({ isValid: true, inmateName: foundInmate.name, status: 'active' });
-        } else {
-          setInmateValidation({ isValid: false, inmateName: foundInmate.name, status: 'inactive' });
-        }
-      } else {
-        setInmateValidation({ isValid: false, inmateName: '', status: '' });
-      }
-    } catch (error) {
-      console.error('Error validating inmate number:', error);
-      setInmateValidation({ isValid: false, inmateName: '', status: '' });
-    } finally {
-      setValidatingInmate(false);
     }
   };
 
@@ -1101,7 +1098,7 @@ const Schedule = () => {
 
       {/* Modern Preview Modal */}
       {showPreview && (
-        <div style={{
+        <div className="schedule-preview-overlay" style={{
           position: 'fixed',
           top: '0',
           left: '0',
@@ -1116,7 +1113,7 @@ const Schedule = () => {
           setShowPreview(false);
           setError('');
         }}>
-          <div style={{
+          <div className="schedule-preview-modal" style={{
             background: 'white',
             borderRadius: '20px',
             padding: '32px',
@@ -1126,7 +1123,7 @@ const Schedule = () => {
             maxHeight: '80vh',
             overflowY: 'auto'
           }} onClick={(e) => e.stopPropagation()}>
-            <div style={{
+            <div className="schedule-preview-header" style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -1147,7 +1144,7 @@ const Schedule = () => {
                 </svg>
                 Preview Visit Request
               </h3>
-              <button style={{
+              <button className="schedule-preview-close" style={{
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
@@ -1174,13 +1171,13 @@ const Schedule = () => {
               Please review your visit request details before submitting
             </p>
             
-            <div style={{
+            <div className="schedule-preview-grid" style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(2, 1fr)',
               gap: '16px',
               marginBottom: '24px'
             }}>
-              <div style={{
+              <div className="schedule-preview-field" style={{
                 background: '#f8fafc',
                 padding: '16px',
                 borderRadius: '8px',
@@ -1203,7 +1200,7 @@ const Schedule = () => {
                 </div>
               </div>
               
-              <div style={{
+              <div className="schedule-preview-field" style={{
                 background: '#f8fafc',
                 padding: '16px',
                 borderRadius: '8px',
@@ -1226,7 +1223,7 @@ const Schedule = () => {
                 </div>
               </div>
               
-              <div style={{
+              <div className="schedule-preview-field" style={{
                 background: '#f8fafc',
                 padding: '16px',
                 borderRadius: '8px',
@@ -1258,7 +1255,7 @@ const Schedule = () => {
                 )}
               </div>
               
-              <div style={{
+              <div className="schedule-preview-field" style={{
                 background: '#f8fafc',
                 padding: '16px',
                 borderRadius: '8px',
@@ -1285,7 +1282,7 @@ const Schedule = () => {
                 </div>
               </div>
               
-              <div style={{
+              <div className="schedule-preview-field full" style={{
                 background: '#f8fafc',
                 padding: '16px',
                 borderRadius: '8px',
@@ -1313,7 +1310,7 @@ const Schedule = () => {
                 </div>
               </div>
               
-              <div style={{
+              <div className="schedule-preview-field full" style={{
                 background: '#f8fafc',
                 padding: '16px',
                 borderRadius: '8px',
@@ -1361,12 +1358,13 @@ const Schedule = () => {
               </div>
             )}
             
-            <div style={{
+            <div className="schedule-preview-actions" style={{
               display: 'flex',
               gap: '12px',
               justifyContent: 'flex-end'
             }}>
               <button
+                className="schedule-preview-btn secondary"
                 style={{
                   padding: '12px 24px',
                   border: 'none',
@@ -1396,6 +1394,7 @@ const Schedule = () => {
                 Cancel
               </button>
               <button
+                className="schedule-preview-btn primary"
                 style={{
                   padding: '12px 24px',
                   border: 'none',

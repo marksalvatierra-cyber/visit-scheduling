@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Filler } from 'chart.js/auto';
 import { Line, Bar } from 'react-chartjs-2';
@@ -41,29 +41,22 @@ const ClientDashboard = () => {
     total: 0
   });
   const [weeklyData, setWeeklyData] = useState([0, 0, 0, 0, 0, 0, 0]);
-  const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
-  const [unsubscribeNotifications, setUnsubscribeNotifications] = useState(null);
   const [isMobileView, setIsMobileView] = useState(
     typeof window !== 'undefined' ? window.innerWidth <= 768 : false
   );
   const statsScrollerRef = useRef(null);
   const isAdjustingScrollRef = useRef(false);
+  const unsubscribeNotificationsRef = useRef(null);
 
-  // Load dashboard data on component mount
-  useEffect(() => {
-    loadDashboardData();
-    return () => {
-      // Cleanup notification listener
-      if (unsubscribeNotifications) {
-        unsubscribeNotifications();
-      }
-    };
-  }, []);
+  const loadDashboardData = useCallback(async () => {
+    if (unsubscribeNotificationsRef.current) {
+      unsubscribeNotificationsRef.current();
+      unsubscribeNotificationsRef.current = null;
+    }
 
-  const loadDashboardData = async () => {
-    setLoading(true);
+    // Load dashboard data
     try {
       const user = await firebaseService.getCurrentUser();
       if (!user) {
@@ -100,14 +93,22 @@ const ClientDashboard = () => {
       const unsubscribe = firebaseService.listenToNotifications(user.uid, (newNotifications) => {
         setNotifications(newNotifications);
       });
-      setUnsubscribeNotifications(() => unsubscribe);
+      unsubscribeNotificationsRef.current = unsubscribe;
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [navigate]);
+
+  // Load dashboard data on component mount
+  useEffect(() => {
+    loadDashboardData();
+    return () => {
+      if (unsubscribeNotificationsRef.current) {
+        unsubscribeNotificationsRef.current();
+      }
+    };
+  }, [loadDashboardData]);
 
   // Function to update profile picture from ClientProfile
   const updateProfilePicture = (newProfilePictureUrl) => {

@@ -12,7 +12,6 @@ const ClientNotifications = () => {
   const [error, setError] = useState('');
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [qrCodeUrl, setQrCodeUrl] = useState('');
-  const [currentUser, setCurrentUser] = useState(null);
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
@@ -39,8 +38,6 @@ const ClientNotifications = () => {
         setError('You must be logged in to view notifications.');
         return;
       }
-
-      setCurrentUser(user);
 
       // Get all notifications for the user (both read and unread)
       const allNotifications = await firebaseService.db
@@ -114,7 +111,7 @@ const ClientNotifications = () => {
     setQrCodeUrl('');
   };
 
-  const getNotificationIcon = (type, status) => {
+  const getNotificationIcon = (type) => {
     switch (type) {
       case 'visit_approved':
         return '✅';

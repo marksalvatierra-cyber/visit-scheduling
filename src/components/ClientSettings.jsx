@@ -422,7 +422,11 @@ const ClientSettings = () => {
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
-        undo();
+        if (historyIndex >= 0) {
+          setSettings(history[historyIndex]);
+          setHistoryIndex(historyIndex - 1);
+          setToast({ message: 'Changes undone', type: 'info', isVisible: true });
+        }
       }
     };
     

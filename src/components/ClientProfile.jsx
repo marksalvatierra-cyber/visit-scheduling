@@ -561,7 +561,57 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
   const [showEmailPassword, setShowEmailPassword] = useState(false);
 
   useEffect(() => {
-    loadProfile();
+    const runLoadProfile = async () => {
+      setLoading(true);
+      try {
+        const user = await firebaseService.getCurrentUser();
+        if (!user) {
+          setToast({ message: 'You must be logged in to view your profile.', type: 'error', isVisible: true });
+          return;
+        }
+
+        setCurrentUser(user);
+        const userData = await firebaseService.getUserData(user.uid);
+        
+        if (userData) {
+          setProfile({
+            firstName: userData.firstName || '',
+            middleName: userData.middleName || '',
+            lastName: userData.lastName || userData.surname || '',
+            email: userData.email || user.email,
+            phone: userData.phone || userData.mobileNumber || '',
+            address: userData.address || userData.completeAddress || '',
+            emergencyContact: userData.emergencyContact || '',
+            emergencyPhone: userData.emergencyPhone || '',
+            dateOfBirth: userData.dateOfBirth || '',
+            occupation: userData.occupation || userData.affiliation || '',
+            relationship: userData.relationship || '',
+            profilePicture: userData.profilePicture || '',
+            country: userData.country || 'Philippines',
+            affiliation: userData.affiliation || ''
+          });
+          
+          setVerificationStatus({
+            profileStatus: userData.profileStatus || 'pending_verification',
+            idFile: userData.idFile || null,
+            idType: userData.idType || '',
+            rejectionReason: userData.rejectionReason || ''
+          });
+        } else {
+          setProfile(prev => ({
+            ...prev,
+            email: user.email
+          }));
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        setToast({ message: 'Failed to load profile data. Please try again.', type: 'error', isVisible: true });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    runLoadProfile();
   }, []);
 
   // Global keyboard shortcuts
@@ -569,7 +619,11 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
-        undo();
+        if (historyIndex >= 0) {
+          setProfile(history[historyIndex]);
+          setHistoryIndex(historyIndex - 1);
+          setToast({ message: 'Changes undone', type: 'info', isVisible: true });
+        }
       }
     };
     
@@ -585,69 +639,9 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
     setHistoryIndex(newHistory.length - 1);
   };
 
-  // Undo function
-  const undo = () => {
-    if (historyIndex >= 0) {
-      setProfile(history[historyIndex]);
-      setHistoryIndex(historyIndex - 1);
-      showToast('Changes undone', 'info');
-    }
-  };
-
   // Show toast notification
   const showToast = (message, type = 'success') => {
     setToast({ message, type, isVisible: true });
-  };
-
-  const loadProfile = async () => {
-    setLoading(true);
-    try {
-      const user = await firebaseService.getCurrentUser();
-      if (!user) {
-        showToast('You must be logged in to view your profile.', 'error');
-        return;
-      }
-
-      setCurrentUser(user);
-      const userData = await firebaseService.getUserData(user.uid);
-      
-      if (userData) {
-        setProfile({
-          firstName: userData.firstName || '',
-          middleName: userData.middleName || '',
-          lastName: userData.lastName || userData.surname || '',
-          email: userData.email || user.email,
-          phone: userData.phone || userData.mobileNumber || '',
-          address: userData.address || userData.completeAddress || '',
-          emergencyContact: userData.emergencyContact || '',
-          emergencyPhone: userData.emergencyPhone || '',
-          dateOfBirth: userData.dateOfBirth || '',
-          occupation: userData.occupation || userData.affiliation || '',
-          relationship: userData.relationship || '',
-          profilePicture: userData.profilePicture || '',
-          country: userData.country || 'Philippines',
-          affiliation: userData.affiliation || ''
-        });
-        
-        // Load verification status
-        setVerificationStatus({
-          profileStatus: userData.profileStatus || 'pending_verification',
-          idFile: userData.idFile || null,
-          idType: userData.idType || '',
-          rejectionReason: userData.rejectionReason || ''
-        });
-      } else {
-        setProfile(prev => ({
-          ...prev,
-          email: user.email
-        }));
-      }
-    } catch (error) {
-      console.error('Error loading profile:', error);
-      showToast('Failed to load profile data. Please try again.', 'error');
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleFieldSave = async (fieldName, newValue) => {
@@ -786,14 +780,6 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
       relationship: 'Relationship'
     };
     return labels[fieldName] || fieldName;
-  };
-
-  const getFieldType = (fieldName) => {
-    if (fieldName === 'email') return 'email';
-    if (fieldName === 'phone' || fieldName === 'emergencyPhone') return 'tel';
-    if (fieldName === 'dateOfBirth') return 'date';
-    if (fieldName === 'address') return 'textarea';
-    return 'text';
   };
 
   const getFieldPlaceholder = (fieldName) => {

@@ -1165,3 +1165,363 @@
     width: 100vw;
   }
 }
+
+/* ===== Client Settings Mobile Modern Overrides ===== */
+@media (max-width: 768px) {
+  .settings-page {
+    background: #f3f6fb;
+  }
+
+  .modern-records-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .modern-records-title {
+    font-size: 15px;
+    gap: 6px;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .undo-btn {
+    padding: 7px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+  }
+
+  .client-badge {
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+  }
+
+  .settings-content {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .settings-sidebar {
+    padding: 10px;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+    border: 1px solid #e2e8f0;
+  }
+
+  .sidebar-title {
+    margin-bottom: 10px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+
+  .category-list {
+    flex-direction: row;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .category-item {
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    min-height: 38px;
+  }
+
+  .category-item.active {
+    background: #eef2ff;
+    border-color: #c7d2fe;
+    color: #3730a3;
+  }
+
+  .category-name {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .settings-main {
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+  }
+
+  .settings-header {
+    padding: 14px 12px 10px;
+    gap: 8px;
+  }
+
+  .settings-title {
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+
+  .settings-description {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .settings-grid {
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .setting-item,
+  .setting-item.modern {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
+  }
+
+  .setting-item:hover,
+  .setting-item.modern:hover {
+    background: #ffffff;
+  }
+
+  .setting-label {
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
+
+  .setting-description {
+    font-size: 11px;
+  }
+
+  .setting-controls {
+    width: 100%;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .editable-field {
+    width: 100%;
+    min-width: 0;
+    border-radius: 10px;
+  }
+
+  .inline-edit-container {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .inline-input,
+  .inline-select {
+    min-width: 0;
+    font-size: 13px;
+  }
+
+  .complex-setting {
+    width: 100%;
+    border-radius: 10px;
+    padding: 10px;
+  }
+
+  .complex-edit-btn {
+    border-radius: 8px;
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .security-actions {
+    margin-top: 12px;
+    padding: 12px;
+  }
+
+  .security-actions h3 {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .action-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 42px;
+    border-radius: 10px;
+  }
+
+  .toast {
+    top: 10px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    min-width: 0;
+    width: calc(100vw - 24px);
+    max-width: 420px;
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+
+  .slideout-overlay {
+    align-items: flex-end;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.52);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .slideout-panel {
+    width: 100%;
+    max-width: 100vw;
+    height: auto;
+    max-height: 88vh;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -12px 30px rgba(15, 23, 42, 0.22);
+    position: relative;
+    animation: settingsSheetIn 0.22s ease-out;
+  }
+
+  .slideout-panel::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 42px;
+    height: 4px;
+    border-radius: 999px;
+    background: #cbd5e1;
+  }
+
+  .slideout-header {
+    padding: 20px 14px 12px;
+  }
+
+  .slideout-header h3 {
+    font-size: 16px;
+  }
+
+  .slideout-close {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+  }
+
+  .slideout-content {
+    padding: 12px 14px;
+  }
+
+  .slideout-actions {
+    padding: 12px 14px 14px;
+    flex-direction: column-reverse;
+    gap: 8px;
+    position: sticky;
+    bottom: 0;
+    background: #ffffff;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .slideout-actions .btn {
+    width: 100%;
+    min-height: 42px;
+    border-radius: 10px;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .modern-records-title {
+    font-size: 14px;
+  }
+
+  .settings-content {
+    padding: 10px;
+  }
+
+  .settings-header {
+    padding: 12px 10px 8px;
+  }
+
+  .setting-item,
+  .setting-item.modern {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .toast {
+    width: calc(100vw - 20px);
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 360px) {
+  .settings-content {
+    padding: 8px;
+  }
+
+  .settings-header {
+    padding: 10px 8px 7px;
+  }
+
+  .modern-records-title {
+    font-size: 13px;
+  }
+
+  .setting-item,
+  .setting-item.modern {
+    padding: 9px;
+    gap: 7px;
+    border-radius: 12px;
+  }
+
+  .slideout-header,
+  .slideout-content,
+  .slideout-actions {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .slideout-actions .btn,
+  .action-btn {
+    min-height: 40px;
+    font-size: 0.8rem;
+  }
+
+  .toast {
+    width: calc(100vw - 16px);
+    font-size: 12.5px;
+  }
+}
+
+@keyframes settingsSheetIn {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

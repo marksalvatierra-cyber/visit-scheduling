@@ -288,6 +288,39 @@
   overflow-x: auto;
 }
 
+.visit-actions-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.visitlogs-detail-modal,
+.visitlogs-cancel-modal {
+  position: relative;
+}
+
+.visitlogs-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #475569;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 3;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+.visitlogs-modal-close:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
 .visits-table {
   width: 100%;
   border-collapse: collapse;
@@ -397,11 +430,231 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  .filter-section {
+    margin-bottom: 1rem;
+  }
+
+  .filter-controls {
+    gap: 0.65rem;
+  }
+
+  .filter-select,
+  .unified-search-container,
+  .clear-btn {
+    width: 100%;
+  }
+
+  .clear-btn {
+    margin-left: 0;
+    padding: 0.7rem 1rem;
+    border-radius: 10px;
+  }
+
   .section-header {
     padding: 1rem;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem;
     align-items: flex-start;
+  }
+
+  .section-title {
+    font-size: 1.05rem;
+  }
+
+  .section-actions {
+    width: 100%;
+  }
+
+  .refresh-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.7rem 1rem;
+    border-radius: 10px;
+  }
+
+  .visits-container {
+    padding: 0.35rem 0.45rem 0.6rem;
+    overflow-x: hidden;
+  }
+
+  .visits-table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .visits-table,
+  .visits-table thead,
+  .visits-table tbody,
+  .visits-table th,
+  .visits-table td,
+  .visits-table tr {
+    display: block;
+    width: 100%;
+  }
+
+  .visits-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+    padding: 0;
+  }
+
+  .visits-table tbody tr {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+    padding: 0.7rem 0.75rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .visits-table td {
+    border-bottom: 1px dashed #eef2f7;
+    padding: 0.55rem 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.9rem;
+    font-size: 0.84rem;
+  }
+
+  .visits-table td:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .visits-table td::before {
+    content: attr(data-label);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    min-width: 74px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .visits-table td[data-label='Actions'] {
+    display: block;
+  }
+
+  .visits-table td[data-label='Actions']::before {
+    display: block;
+    margin-bottom: 0.55rem;
+  }
+
+  .visit-actions-row {
+    gap: 0.45rem;
+  }
+
+  .view-btn {
+    flex: 1;
+    justify-content: center;
+    border-radius: 8px;
+    min-height: 34px;
+    font-size: 0.72rem;
+    padding: 0.45rem 0.55rem;
+  }
+
+  .status {
+    padding: 0.18rem 0.55rem;
+    font-size: 0.69rem;
+  }
+
+  .settings-page .modern-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .settings-page .modern-modal-container.landscape {
+    width: 100%;
+    max-width: 100vw;
+    max-height: 92vh;
+    min-width: 0;
+    border-radius: 18px 18px 0 0;
+    border: 1px solid #e5e7eb;
+    border-bottom: none;
+    animation: visitlogsSheetIn 0.24s ease-out;
+  }
+
+  .visitlogs-detail-modal::before,
+  .visitlogs-cancel-modal::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 42px;
+    height: 4px;
+    border-radius: 999px;
+    background: #cbd5e1;
+    z-index: 2;
+  }
+
+  .visitlogs-modal-close {
+    top: 12px;
+    right: 12px;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    font-size: 18px;
+  }
+
+  .settings-page .modern-modal-container.landscape .modern-modal-body {
+    padding: 26px 14px 14px;
+    gap: 12px;
+  }
+
+  .settings-page .modern-modal-container.landscape .modern-modal-section-title {
+    font-size: 0.82rem;
+  }
+
+  .settings-page .modern-modal-container.landscape .modern-modal-info-card {
+    border-radius: 10px;
+    padding: 12px !important;
+  }
+
+  .settings-page .modern-modal-container.landscape .modern-modal-info-value {
+    font-size: 0.84rem;
+  }
+
+  .visitlogs-cancel-modal {
+    width: 100%;
+    max-width: 100vw !important;
+    max-height: 88vh;
+    border-radius: 18px 18px 0 0;
+    border-bottom: none;
+    animation: visitlogsSheetIn 0.24s ease-out;
+  }
+
+  .visitlogs-cancel-content {
+    padding: 28px 14px 14px !important;
+  }
+
+  .visitlogs-cancel-textarea {
+    border-radius: 10px !important;
+    min-height: 92px !important;
+  }
+
+  .visitlogs-cancel-actions {
+    flex-direction: column-reverse;
+    gap: 0.6rem !important;
+  }
+
+  .visitlogs-cancel-keep,
+  .visitlogs-cancel-confirm {
+    width: 100%;
+    justify-content: center;
+    min-height: 42px;
+    border-radius: 10px !important;
   }
   
   .visits-table th,
@@ -416,9 +669,14 @@
 }
 
 @media (max-width: 640px) {
-  .visits-table th,
   .visits-table td {
-    padding: 0.5rem 0.75rem;
+    padding: 0.5rem 0;
+  }
+
+  .visitlogs-modal-close {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
   }
   
   .view-btn {
@@ -429,6 +687,45 @@
   .status {
     padding: 0.2rem 0.6rem;
     font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .visitlogs-page {
+    padding: 0.7rem 0.4rem;
+  }
+
+  .visits-section {
+    padding: 0.6rem;
+    border-radius: 12px;
+  }
+
+  .visits-header h2 {
+    font-size: 1rem;
+  }
+
+  .visitlogs-modal-content,
+  .visitlogs-cancel-content {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .visitlogs-modal-btn,
+  .visitlogs-cancel-keep,
+  .visitlogs-cancel-confirm {
+    min-height: 40px;
+    font-size: 0.78rem;
+  }
+}
+
+@keyframes visitlogsSheetIn {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }
 
