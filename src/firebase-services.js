@@ -102,6 +102,8 @@ class FirebaseService {
                 ...userData,
                 uid: user.uid, // Explicitly set the user ID
                 email: user.email,
+                gender: userData.gender || 'not_specified',
+                dateOfBirth: userData.dateOfBirth || null,
                 emailVerified: false, // Track email verification status
                 userType: userData.role || 'client', // Set userType field for login compatibility
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -323,7 +325,19 @@ async sendPasswordReset(email) {
     async getUserData(userId) {
         try {
             const doc = await this.db.collection('users').doc(userId).get();
-            return doc.exists ? doc.data() : null;
+            if (!doc.exists) return null;
+
+            const userData = doc.data();
+            const role = userData?.role || userData?.userType;
+            if (role === 'client') {
+                return {
+                    ...userData,
+                    gender: userData.gender || 'not_specified',
+                    dateOfBirth: userData.dateOfBirth || null
+                };
+            }
+
+            return userData;
         } catch (error) {
             console.error('Error getting user data:', error);
             return null;
@@ -1062,6 +1076,134 @@ async sendPasswordReset(email) {
     }
 
     // Statistics Methods
+    normalizeGender(gender) {
+        const value = (gender || '').toString().trim().toLowerCase();
+        if (value === 'male') return 'male';
+        if (value === 'female') return 'female';
+        if (value === 'other') return 'other';
+        return 'not_specified';
+    }
+
+    calculateAgeFromDob(dateOfBirth) {
+        if (!dateOfBirth) return null;
+        const dob = new Date(dateOfBirth);
+        if (Number.isNaN(dob.getTime())) return null;
+
+        const now = new Date();
+        let age = now.getFullYear() - dob.getFullYear();
+        const monthDiff = now.getMonth() - dob.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dob.getDate())) {
+            age--;
+        }
+
+        if (age < 0 || age > 120) return null;
+        return age;
+    }
+
+    getAgeBucket(age) {
+        if (age === null || typeof age !== 'number') return 'unknown';
+        if (age < 18) return 'under_18';
+        if (age <= 24) return '18_24';
+        if (age <= 34) return '25_34';
+        if (age <= 44) return '35_44';
+        return '45_plus';
+    }
+
+    async getVisitorDemographics(days = null) {
+        try {
+            const usersSnapshot = await this.db.collection('users').get();
+            const visitors = [];
+
+            usersSnapshot.forEach((doc) => {
+                const user = doc.data();
+                const role = user.role || user.userType;
+                if (role === 'client') {
+                    visitors.push({
+                        uid: user.uid || doc.id,
+                        firstName: user.firstName || '',
+                        middleName: user.middleName || '',
+                        surname: user.surname || user.lastName || '',
+                        fullName: user.fullName || `${user.firstName || ''} ${user.middleName || ''} ${user.surname || user.lastName || ''}`.replace(/\s+/g, ' ').trim(),
+                        gender: this.normalizeGender(user.gender),
+                        dateOfBirth: user.dateOfBirth || null
+                    });
+                }
+            });
+
+            let requestsQuery = this.db.collection('visitRequests');
+            const numericDays = Number(days);
+            const useDateFilter = Number.isFinite(numericDays) && numericDays > 0;
+            if (useDateFilter) {
+                const startDate = new Date();
+                startDate.setDate(startDate.getDate() - numericDays);
+                startDate.setHours(0, 0, 0, 0);
+                requestsQuery = requestsQuery.where('createdAt', '>=', startDate);
+            }
+
+            const requestSnapshot = await requestsQuery.get();
+            const visitCountsByClient = new Map();
+            requestSnapshot.forEach((doc) => {
+                const req = doc.data();
+                if (!req.clientId) return;
+                visitCountsByClient.set(req.clientId, (visitCountsByClient.get(req.clientId) || 0) + 1);
+            });
+
+            const demographics = {
+                totalVisitors: 0,
+                genderCounts: {
+                    male: 0,
+                    female: 0,
+                    other: 0,
+                    not_specified: 0
+                },
+                ageBuckets: {
+                    under_18: 0,
+                    '18_24': 0,
+                    '25_34': 0,
+                    '35_44': 0,
+                    '45_plus': 0,
+                    unknown: 0
+                },
+                visitors: []
+            };
+
+            visitors.forEach((visitor) => {
+                const visitCount = visitCountsByClient.get(visitor.uid) || 0;
+                if (useDateFilter && visitCount === 0) return;
+
+                const age = this.calculateAgeFromDob(visitor.dateOfBirth);
+                const ageBucket = this.getAgeBucket(age);
+                demographics.totalVisitors++;
+                demographics.genderCounts[visitor.gender]++;
+                demographics.ageBuckets[ageBucket]++;
+
+                demographics.visitors.push({
+                    uid: visitor.uid,
+                    name: visitor.fullName || 'Unknown Visitor',
+                    gender: visitor.gender,
+                    age,
+                    ageBucket,
+                    visitCount
+                });
+            });
+
+            demographics.visitors.sort((a, b) => {
+                if (b.visitCount !== a.visitCount) return b.visitCount - a.visitCount;
+                return a.name.localeCompare(b.name);
+            });
+
+            return demographics;
+        } catch (error) {
+            console.error('Error getting visitor demographics:', error);
+            return {
+                totalVisitors: 0,
+                genderCounts: { male: 0, female: 0, other: 0, not_specified: 0 },
+                ageBuckets: { under_18: 0, '18_24': 0, '25_34': 0, '35_44': 0, '45_plus': 0, unknown: 0 },
+                visitors: []
+            };
+        }
+    }
+
     async getDashboardStats(userId = null) {
         try {
             let requestsQuery = this.db.collection('visitRequests');

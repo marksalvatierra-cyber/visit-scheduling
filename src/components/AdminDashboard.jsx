@@ -112,6 +112,12 @@ const AdminDashboard = () => {
   const [chartLoading, setChartLoading] = useState(false);
   // Weekly stats for reporting export
   const [weeklyRequestData, setWeeklyRequestData] = useState([]);
+  const [demographicData, setDemographicData] = useState({
+    totalVisitors: 0,
+    genderCounts: { male: 0, female: 0, other: 0, not_specified: 0 },
+    ageBuckets: { under_18: 0, '18_24': 0, '25_34': 0, '35_44': 0, '45_plus': 0, unknown: 0 },
+    visitors: []
+  });
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
 
@@ -140,17 +146,19 @@ const refreshDashboardData = useCallback(async () => {
   try {
     console.log('🔄 Refreshing dashboard data...');
     
-    const [stats, inmateData, chartDataResult, activityData] = await Promise.all([
+    const [stats, inmateData, chartDataResult, activityData, demographics] = await Promise.all([
       firebaseService.getDashboardStats(),
       firebaseService.getInmateStats(),
       firebaseService.getRequestStatsByDays(parseInt(chartPeriod)),
-      firebaseService.getRecentActivity(8)
+      firebaseService.getRecentActivity(8),
+      firebaseService.getVisitorDemographics(parseInt(chartPeriod))
     ]);
     
     setDashboardStats(stats);
     setInmateStats(inmateData);
     setChartData(chartDataResult);
     setRecentActivity(activityData);
+    setDemographicData(demographics);
     setLastUpdated(new Date());
     setPendingRequestsCount(stats.pending);
     
@@ -240,12 +248,13 @@ useEffect(() => {
         setLoading(true);
         
         // Load all dashboard data in parallel
-        const [stats, inmateData, weeklyData, activityData, currentUser] = await Promise.all([
+        const [stats, inmateData, weeklyData, activityData, currentUser, demographics] = await Promise.all([
           firebaseService.getDashboardStats(),
           firebaseService.getInmateStats(),
           firebaseService.getWeeklyRequestStats(),
           firebaseService.getRecentActivity(8),
-          firebaseService.getCurrentUser()
+          firebaseService.getCurrentUser(),
+          firebaseService.getVisitorDemographics(parseInt(chartPeriod))
         ]);
         
         setCurrentUser(currentUser);
@@ -270,6 +279,7 @@ useEffect(() => {
   setInmateStats(inmateData);
   setRecentActivity(activityData);
   setWeeklyRequestData(weeklyData);
+  setDemographicData(demographics);
 
         const showRealtimeNotification = (message, type = 'info') => {
   const id = Date.now();
@@ -306,7 +316,7 @@ setUnsubscribeNotifications(() => unsubscribe);
       unsubscribeNotifications();
     }
   };
-}, []);
+}, [chartPeriod]);
 
 const requestsChartData = {
   labels: chartData.labels,
@@ -549,6 +559,43 @@ console.log('📊 Current chart data being rendered:', {
         link.click();
         document.body.removeChild(link);
         showToast('Exported Request Categories.', 'success');
+      } else if (type === 'demographics') {
+        let csv = 'Visitor Demographics\n';
+        csv += `Period,Last ${chartPeriod} days\n`;
+        csv += `Generated At,${new Date().toLocaleString()}\n\n`;
+
+        csv += 'Gender Breakdown\n';
+        csv += 'Gender,Count\n';
+        csv += `Male,${demographicData.genderCounts.male || 0}\n`;
+        csv += `Female,${demographicData.genderCounts.female || 0}\n`;
+        csv += `Other,${demographicData.genderCounts.other || 0}\n`;
+        csv += `Not Specified,${demographicData.genderCounts.not_specified || 0}\n\n`;
+
+        csv += 'Age Distribution\n';
+        csv += 'Age Bucket,Count\n';
+        csv += `Under 18,${demographicData.ageBuckets.under_18 || 0}\n`;
+        csv += `18-24,${demographicData.ageBuckets['18_24'] || 0}\n`;
+        csv += `25-34,${demographicData.ageBuckets['25_34'] || 0}\n`;
+        csv += `35-44,${demographicData.ageBuckets['35_44'] || 0}\n`;
+        csv += `45+,${demographicData.ageBuckets['45_plus'] || 0}\n`;
+        csv += `Unknown,${demographicData.ageBuckets.unknown || 0}\n\n`;
+
+        csv += 'Visitor Detail\n';
+        csv += 'Name,Gender,Age,Visit Count\n';
+        (demographicData.visitors || []).forEach((visitor) => {
+          const genderLabel = visitor.gender === 'not_specified' ? 'Not Specified' : visitor.gender;
+          csv += `"${visitor.name}",${genderLabel},${visitor.age ?? 'N/A'},${visitor.visitCount || 0}\n`;
+        });
+
+        const filename = `visitor-demographics-${new Date().toISOString().split('T')[0]}.csv`;
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('Exported Visitor Demographics.', 'success');
       } else {
         console.warn('Unknown export type:', type);
         showToast('Unknown export type.', 'error');
@@ -573,10 +620,11 @@ console.log('📊 Current chart data being rendered:', {
     
     try {
       // Collect additional time-series for 30 days and 90 days
-      const [last7, last30, last90] = await Promise.all([
+      const [last7, last30, last90, demographics] = await Promise.all([
         firebaseService.getRequestStatsByDays(7),
         firebaseService.getRequestStatsByDays(30),
-        firebaseService.getRequestStatsByDays(90)
+        firebaseService.getRequestStatsByDays(90),
+        firebaseService.getVisitorDemographics(parseInt(chartPeriod))
       ]);
 
       // Create comprehensive report data
@@ -603,6 +651,7 @@ console.log('📊 Current chart data being rendered:', {
           last30,
           last90
         },
+        demographics,
         recentActivity: recentActivity.slice(0, 10) // Last 10 activities
       };
 
@@ -634,6 +683,12 @@ console.log('📊 Current chart data being rendered:', {
   // Helper function to generate Word document
   const generateWordReport = async (data) => {
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const demographics = data.demographics || {
+      totalVisitors: 0,
+      genderCounts: { male: 0, female: 0, other: 0, not_specified: 0 },
+      ageBuckets: { under_18: 0, '18_24': 0, '25_34': 0, '35_44': 0, '45_plus': 0, unknown: 0 },
+      visitors: []
+    };
 
     const doc = new Document({
       sections: [
@@ -691,6 +746,83 @@ console.log('📊 Current chart data being rendered:', {
                 new TableRow({ children: [new TableCell({ children: [new Paragraph('Approval Rate')] }), new TableCell({ children: [new Paragraph(`${data.summary.approvalRate}%`)] })]}),
               ],
             }),
+
+            // Visitor demographics section
+            new Paragraph({
+              text: 'VISITOR DEMOGRAPHICS',
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 400, after: 200 },
+            }),
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: [
+                new TableRow({
+                  children: [
+                    new TableCell({ children: [new Paragraph({ text: 'Metric', bold: true })], shading: { fill: 'CCCCCC' } }),
+                    new TableCell({ children: [new Paragraph({ text: 'Value', bold: true })], shading: { fill: 'CCCCCC' } }),
+                  ],
+                }),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('Total Visitors')] }), new TableCell({ children: [new Paragraph(String(demographics.totalVisitors || 0))] })]}),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('Male')] }), new TableCell({ children: [new Paragraph(String(demographics.genderCounts.male || 0))] })]}),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('Female')] }), new TableCell({ children: [new Paragraph(String(demographics.genderCounts.female || 0))] })]}),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('Other')] }), new TableCell({ children: [new Paragraph(String(demographics.genderCounts.other || 0))] })]}),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('Not Specified')] }), new TableCell({ children: [new Paragraph(String(demographics.genderCounts.not_specified || 0))] })]}),
+              ],
+            }),
+
+            new Paragraph({
+              text: 'AGE DISTRIBUTION',
+              heading: HeadingLevel.HEADING_3,
+              spacing: { before: 300, after: 150 },
+            }),
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: [
+                new TableRow({
+                  children: [
+                    new TableCell({ children: [new Paragraph({ text: 'Age Bucket', bold: true })], shading: { fill: 'CCCCCC' } }),
+                    new TableCell({ children: [new Paragraph({ text: 'Count', bold: true })], shading: { fill: 'CCCCCC' } }),
+                  ],
+                }),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('Under 18')] }), new TableCell({ children: [new Paragraph(String(demographics.ageBuckets.under_18 || 0))] })]}),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('18-24')] }), new TableCell({ children: [new Paragraph(String(demographics.ageBuckets['18_24'] || 0))] })]}),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('25-34')] }), new TableCell({ children: [new Paragraph(String(demographics.ageBuckets['25_34'] || 0))] })]}),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('35-44')] }), new TableCell({ children: [new Paragraph(String(demographics.ageBuckets['35_44'] || 0))] })]}),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('45+')] }), new TableCell({ children: [new Paragraph(String(demographics.ageBuckets['45_plus'] || 0))] })]}),
+                new TableRow({ children: [new TableCell({ children: [new Paragraph('Unknown')] }), new TableCell({ children: [new Paragraph(String(demographics.ageBuckets.unknown || 0))] })]}),
+              ],
+            }),
+
+            ...(demographics.visitors && demographics.visitors.length > 0 ? [
+              new Paragraph({
+                text: 'VISITOR LIST (NAME, SEX, VISIT COUNT)',
+                heading: HeadingLevel.HEADING_3,
+                spacing: { before: 300, after: 150 },
+              }),
+              new Table({
+                width: { size: 100, type: WidthType.PERCENTAGE },
+                rows: [
+                  new TableRow({
+                    children: [
+                      new TableCell({ children: [new Paragraph({ text: 'Name', bold: true })], shading: { fill: 'CCCCCC' } }),
+                      new TableCell({ children: [new Paragraph({ text: 'Gender', bold: true })], shading: { fill: 'CCCCCC' } }),
+                      new TableCell({ children: [new Paragraph({ text: 'Age', bold: true })], shading: { fill: 'CCCCCC' } }),
+                      new TableCell({ children: [new Paragraph({ text: 'Visit Count', bold: true })], shading: { fill: 'CCCCCC' } }),
+                    ],
+                  }),
+                  ...demographics.visitors.slice(0, 25).map((visitor) =>
+                    new TableRow({
+                      children: [
+                        new TableCell({ children: [new Paragraph(visitor.name || 'Unknown Visitor')] }),
+                        new TableCell({ children: [new Paragraph(visitor.gender === 'not_specified' ? 'Not Specified' : (visitor.gender || 'Not Specified'))] }),
+                        new TableCell({ children: [new Paragraph(String(visitor.age ?? 'N/A'))] }),
+                        new TableCell({ children: [new Paragraph(String(visitor.visitCount || 0))] }),
+                      ],
+                    })
+                  ),
+                ],
+              }),
+            ] : []),
 
             // Inmate Statistics Section
             new Paragraph({

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import firebaseService from '../firebase-services';
 import './ClientProfile.css';
 
@@ -182,7 +183,8 @@ const InlineEditField = ({
   setIsEditing, 
   isReadOnly = false,
   placeholder = '',
-  required = false 
+  required = false,
+  options = []
 }) => {
   const [tempValue, setTempValue] = useState(value);
   const [isLoading, setIsLoading] = useState(false);
@@ -252,6 +254,22 @@ const InlineEditField = ({
             placeholder={placeholder}
             rows={3}
           />
+        ) : type === 'select' ? (
+          <select
+            value={tempValue}
+            onChange={(e) => setTempValue(e.target.value)}
+            className="inline-input"
+            autoFocus
+            onBlur={handleSave}
+            disabled={isLoading}
+          >
+            <option value="">Select {label}</option>
+            {options.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         ) : (
           <input
             type={type}
@@ -534,6 +552,7 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
     emergencyContact: '',
     emergencyPhone: '',
     dateOfBirth: '',
+    gender: '',
     occupation: '',
     relationship: '',
     profilePicture: '',
@@ -564,6 +583,8 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
     twoFactorEnabled: false,
     loginNotifications: true
   });
+  const location = useLocation();
+  const isProfileCompletionRequired = new URLSearchParams(location.search).get('completeProfile') === '1';
 
   useEffect(() => {
     const runLoadProfile = async () => {
@@ -589,6 +610,7 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
             emergencyContact: userData.emergencyContact || '',
             emergencyPhone: userData.emergencyPhone || '',
             dateOfBirth: userData.dateOfBirth || '',
+            gender: userData.gender === 'not_specified' ? '' : (userData.gender || ''),
             occupation: userData.occupation || userData.affiliation || '',
             relationship: userData.relationship || '',
             profilePicture: userData.profilePicture || '',
@@ -802,6 +824,7 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
       emergencyContact: 'Emergency Contact Name',
       emergencyPhone: 'Emergency Contact Phone',
       dateOfBirth: 'Date of Birth',
+      gender: 'Gender',
       occupation: 'Occupation',
       relationship: 'Relationship'
     };
@@ -817,6 +840,7 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
       emergencyContact: 'Full name of emergency contact',
       emergencyPhone: '(123) 456-7890',
       occupation: 'Your occupation',
+      gender: 'Select your gender',
       relationship: 'e.g., Spouse, Parent, Sibling'
     };
     return placeholders[fieldName] || '';
@@ -905,6 +929,20 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
   return (
     <div className="settings-page">
       <div className="profile-content">
+        {isProfileCompletionRequired && (!profile.gender || !profile.dateOfBirth) && (
+          <div style={{
+            marginBottom: '16px',
+            padding: '14px 16px',
+            borderRadius: '10px',
+            background: '#fff7ed',
+            border: '1px solid #fed7aa',
+            color: '#9a3412',
+            fontSize: '14px',
+            fontWeight: '600'
+          }}>
+            Please complete your gender and date of birth to continue using the dashboard.
+          </div>
+        )}
         <div className="profile-grid">
           {/* Personal Information Section with Profile Picture */}
           <div className="profile-section">
@@ -1075,6 +1113,23 @@ const ClientProfile = ({ onProfilePictureUpdate }) => {
                     label="Date of Birth"
                     isEditing={editingField === 'dateOfBirth'}
                     setIsEditing={(editing) => setEditingField(editing ? 'dateOfBirth' : null)}
+                  />
+                </div>
+
+                <div className="field-item">
+                  <label className="field-label">Gender</label>
+                  <InlineEditField
+                    value={profile.gender}
+                    onSave={(value) => handleFieldSave('gender', value)}
+                    type="select"
+                    label="Gender"
+                    isEditing={editingField === 'gender'}
+                    setIsEditing={(editing) => setEditingField(editing ? 'gender' : null)}
+                    options={[
+                      { value: 'male', label: 'Male' },
+                      { value: 'female', label: 'Female' },
+                      { value: 'other', label: 'Other' }
+                    ]}
                   />
                 </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Filler } from 'chart.js/auto';
 import { Line, Bar } from 'react-chartjs-2';
@@ -27,6 +27,7 @@ ChartJS.register(
 
 const ClientDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [showBellDropdown, setShowBellDropdown] = useState(false);
   const [showAvatarDropdown, setShowAvatarDropdown] = useState(false);
@@ -69,6 +70,15 @@ const ClientDashboard = () => {
       const userData = await firebaseService.getUserData(user.uid);
       setUserProfile(userData);
 
+      const missingDemographics =
+        !userData?.gender ||
+        userData.gender === 'not_specified' ||
+        !userData?.dateOfBirth;
+
+      if (missingDemographics && !location.pathname.includes('/client/profile')) {
+        navigate('/client/profile?completeProfile=1', { replace: true });
+      }
+
       // Load dashboard stats
       const stats = await firebaseService.getDashboardStats(user.uid);
       setDashboardStats({
@@ -97,7 +107,7 @@ const ClientDashboard = () => {
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     }
-  }, [navigate]);
+  }, [location.pathname, navigate]);
 
   // Load dashboard data on component mount
   useEffect(() => {

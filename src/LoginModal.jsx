@@ -17,6 +17,8 @@ const LoginModal = ({ isOpen, onClose }) => {
       firstName: '', 
       middleName: '', 
       surname: '', 
+      gender: '',
+      dateOfBirth: '',
       country: '', 
       completeAddress: '', 
       mobileNumber: '', 
@@ -136,6 +138,18 @@ const LoginModal = ({ isOpen, onClose }) => {
         }
         if (!registerData.surname?.trim()) {
           setError('Surname is required!');
+          return false;
+        }
+        if (!registerData.gender) {
+          setError('Please select your gender.');
+          return false;
+        }
+        if (!registerData.dateOfBirth) {
+          setError('Date of birth is required.');
+          return false;
+        }
+        if (new Date(registerData.dateOfBirth) > new Date()) {
+          setError('Date of birth cannot be in the future.');
           return false;
         }
         break;
@@ -287,7 +301,11 @@ const LoginModal = ({ isOpen, onClose }) => {
               } else if (userRole === 'officer') {
                 navigate('/officer/dashboard');
               } else if (userRole === 'client') {
-                navigate('/client/dashboard');
+                const hasDemographicProfile =
+                  !!userData.gender &&
+                  userData.gender !== 'not_specified' &&
+                  !!userData.dateOfBirth;
+                navigate(hasDemographicProfile ? '/client/dashboard' : '/client/profile?completeProfile=1');
               }
               onClose();
             } else {
@@ -353,6 +371,8 @@ const LoginModal = ({ isOpen, onClose }) => {
           firstName: formData.register.firstName,
           middleName: formData.register.middleName,
           surname: formData.register.surname,
+          gender: formData.register.gender,
+          dateOfBirth: formData.register.dateOfBirth,
           fullName: `${formData.register.firstName} ${formData.register.middleName} ${formData.register.surname}`.replace(/\s+/g, ' ').trim(),
           country: 'Philippines',
           completeAddress: formData.register.completeAddress,
@@ -396,6 +416,8 @@ const LoginModal = ({ isOpen, onClose }) => {
               firstName: '', 
               middleName: '', 
               surname: '', 
+              gender: '',
+              dateOfBirth: '',
               country: '', 
               completeAddress: '', 
               mobileNumber: '', 
@@ -460,6 +482,8 @@ const LoginModal = ({ isOpen, onClose }) => {
           firstName: '', 
           middleName: '', 
           surname: '', 
+          gender: '',
+          dateOfBirth: '',
           country: '', 
           completeAddress: '', 
           mobileNumber: '', 
@@ -488,6 +512,8 @@ const LoginModal = ({ isOpen, onClose }) => {
         firstName: '', 
         middleName: '', 
         surname: '', 
+        gender: '',
+        dateOfBirth: '',
         country: '', 
         completeAddress: '', 
         mobileNumber: '', 
@@ -530,7 +556,11 @@ const LoginModal = ({ isOpen, onClose }) => {
         } else if (userRole === 'officer') {
           navigate('/officer/dashboard');
         } else if (userRole === 'client') {
-          navigate('/client/dashboard');
+          const hasDemographicProfile =
+            !!userData.gender &&
+            userData.gender !== 'not_specified' &&
+            !!userData.dateOfBirth;
+          navigate(hasDemographicProfile ? '/client/dashboard' : '/client/profile?completeProfile=1');
         }
         
         // Close both modals
@@ -545,7 +575,11 @@ const LoginModal = ({ isOpen, onClose }) => {
         } else if (userRole === 'officer') {
           navigate('/officer/dashboard');
         } else if (userRole === 'client') {
-          navigate('/client/dashboard');
+          const hasDemographicProfile =
+            !!userData.gender &&
+            userData.gender !== 'not_specified' &&
+            !!userData.dateOfBirth;
+          navigate(hasDemographicProfile ? '/client/dashboard' : '/client/profile?completeProfile=1');
         }
         
         setShowTermsModal(false);
@@ -694,6 +728,35 @@ const LoginModal = ({ isOpen, onClose }) => {
                     value={formData.register.surname}
                     onChange={(e) => handleInputChange('register', 'surname', e.target.value)}
                   />
+                </div>
+
+                <div className="form-row">
+                  <div className="input-wrapper half-width">
+                    <span className="input-icon">⚧</span>
+                    <select
+                      className="modal-input modal-select"
+                      aria-label="Gender"
+                      value={formData.register.gender}
+                      onChange={(e) => handleInputChange('register', 'gender', e.target.value)}
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
+                  <div className="input-wrapper half-width">
+                    <span className="input-icon">🎂</span>
+                    <input
+                      type="date"
+                      className="modal-input"
+                      aria-label="Date of Birth"
+                      value={formData.register.dateOfBirth}
+                      max={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => handleInputChange('register', 'dateOfBirth', e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
             )}
