@@ -118,6 +118,7 @@ const AdminDashboard = () => {
     ageBuckets: { under_18: 0, '18_24': 0, '25_34': 0, '35_44': 0, '45_plus': 0, unknown: 0 },
     visitors: []
   });
+  const [visitorGenderFilter, setVisitorGenderFilter] = useState('all');
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
 
@@ -414,6 +415,91 @@ console.log('📊 Current chart data being rendered:', {
         }
       }
     }
+  };
+
+  const genderChartData = {
+    labels: ['Male', 'Female', 'Other', 'Not Specified'],
+    datasets: [{
+      label: 'Visitors',
+      data: [
+        demographicData.genderCounts.male || 0,
+        demographicData.genderCounts.female || 0,
+        demographicData.genderCounts.other || 0,
+        demographicData.genderCounts.not_specified || 0
+      ],
+      backgroundColor: ['#3b82f6', '#ec4899', '#8b5cf6', '#9ca3af'],
+      borderRadius: 8,
+      barPercentage: 0.7,
+    }]
+  };
+
+  const ageChartData = {
+    labels: ['Under 18', '18-24', '25-34', '35-44', '45+', 'Unknown'],
+    datasets: [{
+      label: 'Visitors',
+      data: [
+        demographicData.ageBuckets.under_18 || 0,
+        demographicData.ageBuckets['18_24'] || 0,
+        demographicData.ageBuckets['25_34'] || 0,
+        demographicData.ageBuckets['35_44'] || 0,
+        demographicData.ageBuckets['45_plus'] || 0,
+        demographicData.ageBuckets.unknown || 0
+      ],
+      backgroundColor: ['#06b6d4', '#10b981', '#f59e0b', '#f97316', '#ef4444', '#9ca3af'],
+      borderRadius: 8,
+      barPercentage: 0.7,
+    }]
+  };
+
+  const demographicChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1,
+          color: '#6b7280'
+        },
+        grid: {
+          color: '#f3f4f6'
+        }
+      },
+      x: {
+        ticks: {
+          color: '#6b7280'
+        },
+        grid: {
+          display: false
+        }
+      }
+    }
+  };
+
+  const genderChartOptions = {
+    ...demographicChartOptions,
+    onClick: (_event, elements) => {
+      if (!elements || elements.length === 0) return;
+      const selectedIndex = elements[0].index;
+      const filterByIndex = ['male', 'female', 'other', 'not_specified'];
+      const selectedFilter = filterByIndex[selectedIndex] || 'all';
+      setVisitorGenderFilter(selectedFilter);
+    }
+  };
+
+  const filteredVisitors = (demographicData.visitors || []).filter((visitor) => {
+    if (visitorGenderFilter === 'all') return true;
+    return visitor.gender === visitorGenderFilter;
+  });
+
+  const getGenderLabel = (gender) => {
+    if (gender === 'male') return 'Male';
+    if (gender === 'female') return 'Female';
+    if (gender === 'other') return 'Other';
+    return 'Not Specified';
   };
 
   const handleSignOut = async () => {
@@ -1697,6 +1783,204 @@ const markAllNotificationsRead = async () => {
                       <Bar data={categoriesChartData} options={categoriesChartOptions} />
                     </div>
                   </div>
+
+                  <div className="modern-chart-card" style={{ gridColumn: '1 / -1' }}>
+                    <div className="modern-chart-header">
+                      <div className="modern-chart-title">
+                        <div className="modern-chart-icon">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                          </svg>
+                        </div>
+                        <div className="modern-chart-info">
+                          <h3>Visitor Demographic Snapshot</h3>
+                          <p>Quick overview for panel presentation</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                        gap: '12px'
+                      }}
+                    >
+                      <button
+                        onClick={() => setVisitorGenderFilter('all')}
+                        style={{
+                          background: '#eff6ff',
+                          borderRadius: '10px',
+                          padding: '12px',
+                          border: visitorGenderFilter === 'all' ? '2px solid #1d4ed8' : '1px solid transparent',
+                          cursor: 'pointer',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <div style={{ fontSize: '12px', color: '#1e40af', fontWeight: 600 }}>Total Visitors</div>
+                        <div style={{ fontSize: '24px', color: '#1d4ed8', fontWeight: 700 }}>{demographicData.totalVisitors || 0}</div>
+                      </button>
+                      <button
+                        onClick={() => setVisitorGenderFilter('male')}
+                        style={{
+                          background: '#f0fdf4',
+                          borderRadius: '10px',
+                          padding: '12px',
+                          border: visitorGenderFilter === 'male' ? '2px solid #16a34a' : '1px solid transparent',
+                          cursor: 'pointer',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <div style={{ fontSize: '12px', color: '#166534', fontWeight: 600 }}>Male</div>
+                        <div style={{ fontSize: '24px', color: '#16a34a', fontWeight: 700 }}>{demographicData.genderCounts.male || 0}</div>
+                      </button>
+                      <button
+                        onClick={() => setVisitorGenderFilter('female')}
+                        style={{
+                          background: '#fdf2f8',
+                          borderRadius: '10px',
+                          padding: '12px',
+                          border: visitorGenderFilter === 'female' ? '2px solid #db2777' : '1px solid transparent',
+                          cursor: 'pointer',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <div style={{ fontSize: '12px', color: '#9d174d', fontWeight: 600 }}>Female</div>
+                        <div style={{ fontSize: '24px', color: '#db2777', fontWeight: 700 }}>{demographicData.genderCounts.female || 0}</div>
+                      </button>
+                      <button
+                        onClick={() => setVisitorGenderFilter('other')}
+                        style={{
+                          background: '#f5f3ff',
+                          borderRadius: '10px',
+                          padding: '12px',
+                          border: visitorGenderFilter === 'other' ? '2px solid #7c3aed' : '1px solid transparent',
+                          cursor: 'pointer',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <div style={{ fontSize: '12px', color: '#6d28d9', fontWeight: 600 }}>Other</div>
+                        <div style={{ fontSize: '24px', color: '#7c3aed', fontWeight: 700 }}>{demographicData.genderCounts.other || 0}</div>
+                      </button>
+                      <button
+                        onClick={() => setVisitorGenderFilter('not_specified')}
+                        style={{
+                          background: '#f9fafb',
+                          borderRadius: '10px',
+                          padding: '12px',
+                          border: visitorGenderFilter === 'not_specified' ? '2px solid #6b7280' : '1px solid transparent',
+                          cursor: 'pointer',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <div style={{ fontSize: '12px', color: '#4b5563', fontWeight: 600 }}>Not Specified</div>
+                        <div style={{ fontSize: '24px', color: '#6b7280', fontWeight: 700 }}>{demographicData.genderCounts.not_specified || 0}</div>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="modern-chart-card">
+                    <div className="modern-chart-header">
+                      <div className="modern-chart-title">
+                        <div className="modern-chart-icon">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                          </svg>
+                        </div>
+                        <div className="modern-chart-info">
+                          <h3>Visitor Sex Distribution</h3>
+                          <p>Male, Female, Other breakdown ({demographicData.totalVisitors || 0} visitors) - click a bar to filter list</p>
+                        </div>
+                      </div>
+                      <div className="modern-chart-actions">
+                        <button
+                          className="modern-btn-secondary"
+                          onClick={() => handleExportData('demographics')}
+                        >
+                          Export Data
+                        </button>
+                      </div>
+                    </div>
+                    <div className="modern-chart-container">
+                      <Bar data={genderChartData} options={genderChartOptions} />
+                    </div>
+                  </div>
+
+                  <div className="modern-chart-card">
+                    <div className="modern-chart-header">
+                      <div className="modern-chart-title">
+                        <div className="modern-chart-icon">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M20 21V7"></path>
+                            <path d="M12 21V3"></path>
+                            <path d="M4 21v-4"></path>
+                          </svg>
+                        </div>
+                        <div className="modern-chart-info">
+                          <h3>Visitor Age Distribution</h3>
+                          <p>Age groups based on date of birth</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="modern-chart-container">
+                      <Bar data={ageChartData} options={demographicChartOptions} />
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section className="modern-activity-section" style={{ marginTop: '24px' }}>
+                <div className="modern-activity-header">
+                  <div className="modern-activity-title">
+                    <h2>Visitor Demographic List</h2>
+                    <p>
+                      Showing {filteredVisitors.length} record(s)
+                      {visitorGenderFilter !== 'all' ? ` for ${getGenderLabel(visitorGenderFilter)}` : ''}
+                    </p>
+                  </div>
+                  <div className="modern-activity-actions">
+                    {visitorGenderFilter !== 'all' && (
+                      <button className="modern-btn-secondary" onClick={() => setVisitorGenderFilter('all')}>
+                        Clear Filter
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                        <th style={{ textAlign: 'left', padding: '12px', fontSize: '13px', color: '#374151' }}>Name</th>
+                        <th style={{ textAlign: 'left', padding: '12px', fontSize: '13px', color: '#374151' }}>Sex</th>
+                        <th style={{ textAlign: 'left', padding: '12px', fontSize: '13px', color: '#374151' }}>Age</th>
+                        <th style={{ textAlign: 'left', padding: '12px', fontSize: '13px', color: '#374151' }}>Visit Count</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredVisitors.length === 0 ? (
+                        <tr>
+                          <td colSpan="4" style={{ padding: '16px', color: '#6b7280' }}>
+                            No visitors found for the selected filter.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredVisitors.slice(0, 50).map((visitor) => (
+                          <tr key={visitor.uid} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                            <td style={{ padding: '12px', fontSize: '14px', color: '#111827' }}>{visitor.name}</td>
+                            <td style={{ padding: '12px', fontSize: '14px', color: '#374151' }}>{getGenderLabel(visitor.gender)}</td>
+                            <td style={{ padding: '12px', fontSize: '14px', color: '#374151' }}>{visitor.age ?? 'N/A'}</td>
+                            <td style={{ padding: '12px', fontSize: '14px', color: '#374151' }}>{visitor.visitCount || 0}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </section>
 
