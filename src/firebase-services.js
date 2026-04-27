@@ -1086,7 +1086,12 @@ async sendPasswordReset(email) {
 
     calculateAgeFromDob(dateOfBirth) {
         if (!dateOfBirth) return null;
-        const dob = new Date(dateOfBirth);
+        let dob;
+        if (dateOfBirth?.toDate && typeof dateOfBirth.toDate === 'function') {
+            dob = dateOfBirth.toDate();
+        } else {
+            dob = new Date(dateOfBirth);
+        }
         if (Number.isNaN(dob.getTime())) return null;
 
         const now = new Date();
@@ -1112,40 +1117,78 @@ async sendPasswordReset(email) {
     async getVisitorDemographics(days = null) {
         try {
             const usersSnapshot = await this.db.collection('users').get();
-            const visitors = [];
+            const usersByClientId = new Map();
 
             usersSnapshot.forEach((doc) => {
-                const user = doc.data();
+                const user = doc.data() || {};
                 const role = user.role || user.userType;
-                if (role === 'client') {
-                    visitors.push({
-                        uid: user.uid || doc.id,
-                        firstName: user.firstName || '',
-                        middleName: user.middleName || '',
-                        surname: user.surname || user.lastName || '',
-                        fullName: user.fullName || `${user.firstName || ''} ${user.middleName || ''} ${user.surname || user.lastName || ''}`.replace(/\s+/g, ' ').trim(),
-                        gender: this.normalizeGender(user.gender),
-                        dateOfBirth: user.dateOfBirth || null
-                    });
-                }
+                if (role !== 'client') return;
+
+                const clientId = user.uid || doc.id;
+                usersByClientId.set(clientId, {
+                    uid: clientId,
+                    fullName: user.fullName || `${user.firstName || ''} ${user.middleName || ''} ${user.surname || user.lastName || ''}`.replace(/\s+/g, ' ').trim(),
+                    gender: user.gender || null,
+                    dateOfBirth: user.dateOfBirth || null,
+                    role
+                });
             });
 
             let requestsQuery = this.db.collection('visitRequests');
             const numericDays = Number(days);
             const useDateFilter = Number.isFinite(numericDays) && numericDays > 0;
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - (useDateFilter ? numericDays : 0));
+            startDate.setHours(0, 0, 0, 0);
+
             if (useDateFilter) {
-                const startDate = new Date();
-                startDate.setDate(startDate.getDate() - numericDays);
-                startDate.setHours(0, 0, 0, 0);
                 requestsQuery = requestsQuery.where('createdAt', '>=', startDate);
             }
 
-            const requestSnapshot = await requestsQuery.get();
+            let requestSnapshot;
+            try {
+                requestSnapshot = await requestsQuery.get();
+            } catch (queryError) {
+                console.warn('Demographics date-filter query failed, falling back to unfiltered request scan:', queryError);
+                requestSnapshot = await this.db.collection('visitRequests').get();
+            }
+
             const visitCountsByClient = new Map();
+            const latestClientNameById = new Map();
+            const requestGenderByClient = new Map();
+            const requestDobByClient = new Map();
+
+            const parseRequestDate = (value) => {
+                if (!value) return null;
+                if (value?.toDate && typeof value.toDate === 'function') {
+                    return value.toDate();
+                }
+                const parsed = new Date(value);
+                if (Number.isNaN(parsed.getTime())) return null;
+                return parsed;
+            };
+
             requestSnapshot.forEach((doc) => {
                 const req = doc.data();
                 if (!req.clientId) return;
+
+                if (useDateFilter) {
+                    const requestDate = parseRequestDate(req.createdAt) || parseRequestDate(req.submittedAt);
+                    if (requestDate && requestDate < startDate) {
+                        return;
+                    }
+                }
+
                 visitCountsByClient.set(req.clientId, (visitCountsByClient.get(req.clientId) || 0) + 1);
+                if (req.clientName) {
+                    latestClientNameById.set(req.clientId, req.clientName);
+                }
+                if (req.visitorGender) {
+                    requestGenderByClient.set(req.clientId, req.visitorGender);
+                }
+                if (req.visitorDateOfBirth) {
+                    requestDobByClient.set(req.clientId, req.visitorDateOfBirth);
+                }
             });
 
             const demographics = {
@@ -1167,25 +1210,33 @@ async sendPasswordReset(email) {
                 visitors: []
             };
 
-            visitors.forEach((visitor) => {
-                const visitCount = visitCountsByClient.get(visitor.uid) || 0;
-                if (useDateFilter && visitCount === 0) return;
+            const allClientIds = new Set([
+                ...Array.from(usersByClientId.keys()),
+                ...Array.from(visitCountsByClient.keys())
+            ]);
 
-                const age = this.calculateAgeFromDob(visitor.dateOfBirth);
+            for (const clientId of allClientIds) {
+                const userData = usersByClientId.get(clientId) || null;
+                const visitCount = visitCountsByClient.get(clientId) || 0;
+
+                const fullNameFromProfile = userData?.fullName || '';
+                const gender = this.normalizeGender(userData?.gender || requestGenderByClient.get(clientId));
+                const age = this.calculateAgeFromDob(userData?.dateOfBirth || requestDobByClient.get(clientId) || null);
                 const ageBucket = this.getAgeBucket(age);
+
                 demographics.totalVisitors++;
-                demographics.genderCounts[visitor.gender]++;
+                demographics.genderCounts[gender]++;
                 demographics.ageBuckets[ageBucket]++;
 
                 demographics.visitors.push({
-                    uid: visitor.uid,
-                    name: visitor.fullName || 'Unknown Visitor',
-                    gender: visitor.gender,
+                    uid: clientId,
+                    name: fullNameFromProfile || latestClientNameById.get(clientId) || 'Unknown Visitor',
+                    gender,
                     age,
                     ageBucket,
                     visitCount
                 });
-            });
+            }
 
             demographics.visitors.sort((a, b) => {
                 if (b.visitCount !== a.visitCount) return b.visitCount - a.visitCount;

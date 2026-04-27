@@ -375,6 +375,8 @@ const Schedule = () => {
         clientId: currentUser.uid,
         clientName: form.visitorName,
         clientEmail: currentUser.email,
+        visitorGender: userData?.gender || 'not_specified',
+        visitorDateOfBirth: userData?.dateOfBirth || null,
         userProfilePicture: userData?.profilePicture || null,
         inmateId: selectedInmate?.id || '',
         inmateNumber: form.inmateNumber,
